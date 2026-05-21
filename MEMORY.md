@@ -4,18 +4,17 @@
 
 ## NEXT (priority order)
 
-- [ ] **SLEEP** before QURE R3 sutra ujutro. Non-negotiable.
-- [ ] QURE clean-staging push to `lipakjosip442-png/qure-compliance` PRIVATE — TOP PRIORITY tomorrow morning.
-- [ ] R3 prep: REHEARSAL cold-read, dashboard test, posture.
-- [ ] BH v1.2 second commit (current state has uncommitted v1.2 work).
-- [ ] BH v1.2 push to `lipakjosip442-png/black-heron` PRIVATE — after QURE, requires `BH_ALLOW_PUSH=1`.
-- [ ] BH v1.3 sprint post-R3:
-      - Phase G — BH consumes external MCPs (sequential-thinking, playwright, context7, firecrawl)
+- [ ] **RESUME COMMAND for next session:** `cook v1.3 phase G` (BH consumes external MCPs — sequential-thinking, playwright, context7, firecrawl). Boot reads this file first; that's the next task.
+- [ ] BH v1.3 sprint (active, continues immediately):
+      - Phase G — BH consumes external MCPs (sequential-thinking, playwright, context7, firecrawl) ← START HERE
       - Phase R — baseline drift-over-time mode (`--baseline previous.json`)
       - Phase S — content-hash caching across audits
       - Phase O — GitHub Actions workflow example
       - Phase P — GitHub URL ingest (`black-heron https://github.com/...`)
       - Phase Q — HITL queue for ambiguous findings
+- [ ] QURE clean-staging push to `lipakjosip442-png/qure-compliance` PRIVATE — sutra ujutro pre-R3, separate session, separate repo.
+- [ ] R3 prep sutra ujutro: REHEARSAL cold-read, dashboard test, posture.
+- [ ] BH v1.2 + v1.3 push to `lipakjosip442-png/black-heron` PRIVATE — post-R3, requires `BH_ALLOW_PUSH=1`.
 - [ ] Self-audit refactor candidates (from v1.1 self-audit findings):
       - Lens duplication helper (3 lens modules share 90% of run() body)
       - Cost tracker preemptive cap check (currently reactive — call that pushes over completes)
