@@ -48,6 +48,22 @@ class RepoContext(BaseModel):
     todo_count: int
 
 
+class SuggestedPatch(BaseModel):
+    """A patch proposed by code_writer for a verified P0/P1 finding.
+
+    NEVER auto-applied in v1.2 — suggest mode only. User reviews + applies manually.
+    """
+    model_config = ConfigDict(extra="ignore")
+
+    file: str
+    lines_old: str  # "L42-L48" or "L42"
+    diff: str       # unified-diff format string
+    rationale: str  # 1-2 sentence why this patch addresses the finding
+    confidence: float = Field(ge=0.0, le=1.0)
+    risk: Literal["low", "medium", "high"]  # blast radius assessment
+    verifier_approved: bool = False  # set true after verifier sanity-check
+
+
 class Rubric(BaseModel):
     """Versioned audit policy. Loaded from rubric.default.json or user-supplied path."""
     model_config = ConfigDict(extra="ignore")

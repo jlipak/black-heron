@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from ._models import Rubric
+from .code_writer import suggest_patches
 from .cost_tracker import CostTracker
 from .discovery import build_context
 from .lenses import ALL_LENSES, run_blind_spot
@@ -58,6 +60,17 @@ console = Console()
 @click.option("--cost-cap", type=float, default=None, help="Override rubric cost cap (USD).")
 @click.option("--time-cap", type=int, default=None, help="Override rubric time cap (seconds).")
 @click.option("--dry-run", is_flag=True, help="Print what would be sent; no API calls.")
+@click.option(
+    "--mode",
+    type=click.Choice(["audit", "suggest"]),
+    default="audit",
+    help="`audit` = lenses+verifier only (default). `suggest` = also draft patches for verified P0/P1 findings.",
+)
+@click.option(
+    "--parallel/--no-parallel",
+    default=True,
+    help="Run first-pass lenses (code_quality, governance, drift) in parallel via ThreadPoolExecutor. Default: enabled.",
+)
 def audit(
     repo_path: Path,
     lens_arg: str,
@@ -67,6 +80,8 @@ def audit(
     cost_cap: float | None,
     time_cap: int | None,
     dry_run: bool,
+    mode: str,
+    parallel: bool,
 ) -> None:
     """Run a Black Heron audit on REPO_PATH and write reports to --out."""
     if env_path is not None:
@@ -133,25 +148,54 @@ def audit(
     raw_counts: dict[str, int] = {}
     lens_timings: dict[str, float] = {}
 
-    # First three lenses run in declared order; blind_spot runs last and sees the others' output.
+    # First three lenses run in parallel (ThreadPoolExecutor) if --parallel; else sequential.
+    # blind_spot runs last and depends on prior findings (always sequential, after first-pass joins).
     first_pass = [n for n in lens_list if n != "blind_spot"]
-    for name in first_pass:
+
+    if parallel and len(first_pass) > 1:
         if tracker.exceeded():
-            console.print(f"[red]Cost cap ${rubric.cost_cap_usd:.2f} exceeded[/red] before {name}; aborting.")
+            console.print(f"[red]Cost cap ${rubric.cost_cap_usd:.2f} exceeded[/red] before first-pass; aborting.")
             sys.exit(4)
-        if time.time() - started_at > rubric.time_cap_seconds:
-            console.print(f"[red]Time cap {rubric.time_cap_seconds}s exceeded[/red]; aborting.")
-            sys.exit(5)
-        t0 = time.time()
-        with console.status(f"[bold]{name}[/bold] lens running..."):
-            findings = ALL_LENSES[name](ctx, client, tracker)
-        lens_timings[name] = time.time() - t0
-        raw_counts[name] = len(findings)
-        all_findings.extend(findings)
-        console.print(
-            f"  [green]{name}[/green]: {len(findings)} raw findings  "
-            f"({lens_timings[name]:.1f}s, ${tracker.cost_so_far:.3f} cumulative)"
-        )
+        console.print(f"[bold]First-pass lenses[/bold] running in parallel: {', '.join(first_pass)}")
+        pass_t0 = time.time()
+        with ThreadPoolExecutor(max_workers=len(first_pass)) as pool:
+            future_to_name = {
+                pool.submit(ALL_LENSES[name], ctx, client, tracker): name
+                for name in first_pass
+            }
+            for fut in as_completed(future_to_name):
+                name = future_to_name[fut]
+                try:
+                    findings = fut.result()
+                except Exception as e:
+                    console.print(f"  [red]{name}[/red] FAILED: {type(e).__name__}: {e}")
+                    findings = []
+                lens_timings[name] = time.time() - pass_t0  # wall-time bucket per lens
+                raw_counts[name] = len(findings)
+                all_findings.extend(findings)
+                console.print(
+                    f"  [green]{name}[/green]: {len(findings)} raw findings  "
+                    f"(${tracker.cost_so_far:.3f} cumulative)"
+                )
+        console.print(f"[dim]First-pass parallel wall time: {time.time() - pass_t0:.1f}s[/dim]")
+    else:
+        for name in first_pass:
+            if tracker.exceeded():
+                console.print(f"[red]Cost cap ${rubric.cost_cap_usd:.2f} exceeded[/red] before {name}; aborting.")
+                sys.exit(4)
+            if time.time() - started_at > rubric.time_cap_seconds:
+                console.print(f"[red]Time cap {rubric.time_cap_seconds}s exceeded[/red]; aborting.")
+                sys.exit(5)
+            t0 = time.time()
+            with console.status(f"[bold]{name}[/bold] lens running..."):
+                findings = ALL_LENSES[name](ctx, client, tracker)
+            lens_timings[name] = time.time() - t0
+            raw_counts[name] = len(findings)
+            all_findings.extend(findings)
+            console.print(
+                f"  [green]{name}[/green]: {len(findings)} raw findings  "
+                f"({lens_timings[name]:.1f}s, ${tracker.cost_so_far:.3f} cumulative)"
+            )
 
     if "blind_spot" in lens_list:
         if tracker.exceeded() or (time.time() - started_at > rubric.time_cap_seconds):
@@ -180,6 +224,17 @@ def audit(
         f"  Verified: {len(verifier.verified)} | Rejected: {len(verifier.rejected)}  "
         f"(verifier ${tracker.cost_so_far - sum(tracker.lens_cost.get(n, 0.0) for n in raw_counts):.3f})"
     )
+
+    # Suggest-mode: draft patches for high-confidence P0/P1 verified findings
+    suggested_patches = []
+    if mode == "suggest" and verifier.verified and not tracker.exceeded():
+        console.print("\n[bold]Code-writer (suggest mode)[/bold] — drafting patches for P0/P1...")
+        patches = suggest_patches(verifier.verified, repo_path, client, tracker)
+        suggested_patches = [p.model_dump() for p in patches]
+        approved = sum(1 for p in patches if p.verifier_approved)
+        console.print(
+            f"  Patches drafted: {len(patches)} | Verifier-approved: {approved}"
+        )
     console.print(
         f"\n[bold]Totals:[/bold] wall {wall_seconds:.1f}s, cost ${tracker.cost_so_far:.3f}"
     )
@@ -192,8 +247,10 @@ def audit(
         "raw_finding_counts": raw_counts,
         "rubric_version": rubric.rubric_version,
         "rubric_source": rubric.source,
+        "mode": mode,
+        "suggested_patches_count": len(suggested_patches),
     }
-    write_report(out_dir, ctx, verifier, raw_counts, metrics)
+    write_report(out_dir, ctx, verifier, raw_counts, metrics, suggested_patches)
     console.print(
         f"\n[bold green]Reports written:[/bold green] "
         f"{out_dir / 'REPORT.md'} | {out_dir / 'findings.json'} | {out_dir / 'findings.sarif'}"

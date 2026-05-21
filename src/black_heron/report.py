@@ -19,12 +19,14 @@ def write_report(
     verifier: VerifierResult,
     lens_raw_counts: dict[str, int],
     metrics: dict | None = None,
+    suggested_patches: list[dict] | None = None,
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     metrics = metrics or {}
-    _write_findings_json(out_dir / "findings.json", ctx, verifier, lens_raw_counts, metrics)
+    patches = suggested_patches or []
+    _write_findings_json(out_dir / "findings.json", ctx, verifier, lens_raw_counts, metrics, patches)
     _write_findings_sarif(out_dir / "findings.sarif", ctx, verifier)
-    _write_report_md(out_dir / "REPORT.md", ctx, verifier, lens_raw_counts, metrics)
+    _write_report_md(out_dir / "REPORT.md", ctx, verifier, lens_raw_counts, metrics, patches)
 
 
 def _write_findings_json(
@@ -33,6 +35,7 @@ def _write_findings_json(
     v: VerifierResult,
     raw: dict,
     metrics: dict,
+    patches: list[dict],
 ) -> None:
     payload = {
         "schema_version": "1.0.0",
@@ -51,6 +54,7 @@ def _write_findings_json(
         "rejected_count": len(v.rejected),
         "verified": v.verified,
         "rejected": v.rejected,
+        "suggested_patches": patches,
     }
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
@@ -140,6 +144,7 @@ def _write_report_md(
     v: VerifierResult,
     raw: dict,
     metrics: dict,
+    patches: list[dict],
 ) -> None:
     by_sev: dict[str, list[dict]] = {"P0": [], "P1": [], "P2": []}
     for f in v.verified:
@@ -220,6 +225,24 @@ def _write_report_md(
                 if f.get("verifier_note"):
                     lines.append(f"**Verifier note:** {f.get('verifier_note')}")
                 lines.append("")
+
+    if patches:
+        approved = [p for p in patches if p.get("verifier_approved")]
+        lines.append(f"## Suggested patches ({len(approved)}/{len(patches)} verifier-approved)")
+        lines.append("")
+        lines.append("These patches are SUGGESTIONS only — SHIKA reviews + applies manually. Never auto-applied.")
+        lines.append("")
+        for i, p in enumerate(patches, 1):
+            badge = "✓ verifier-approved" if p.get("verifier_approved") else "⚠ unverified"
+            lines.append(f"### Patch {i} — `{p.get('file', '?')}` lines `{p.get('lines_old', '?')}`  [{badge}, risk={p.get('risk', '?')}]")
+            lines.append("")
+            lines.append(f"**Rationale:** {p.get('rationale', '')}")
+            lines.append(f"**Confidence:** {p.get('confidence', 0):.2f}")
+            lines.append("")
+            lines.append("```diff")
+            lines.append(p.get("diff", "").strip())
+            lines.append("```")
+            lines.append("")
 
     if v.rejected:
         lines.append("## Rejected findings (transparency)")

@@ -2,6 +2,42 @@
 
 All notable changes to Black Heron. SemVer.
 
+## [1.2.0] — 2026-05-22 (early morning)
+
+The "code-writer + parallel + tested" release.
+
+### Added — Code-writing suggest mode
+- `src/black_heron/code_writer.py` (~170 lines): drafts unified-diff patches for verified P0/P1 findings with confidence ≥ 0.85
+- Writer: Opus 4.6 reads full file (capped 20KB), produces diff + rationale + risk assessment
+- Patch verifier: Opus 4.7 adversarial review (approves only if patch addresses finding without introducing new issues)
+- `SuggestedPatch` Pydantic model added to `_models.py`
+- CLI `--mode suggest` flag (default still `audit`)
+- `REPORT.md` renders patches inline with diff block + verifier-approval badge
+- `findings.json` includes `suggested_patches` array
+- **Sacred Law:** suggest-only in v1.2. Never auto-applied.
+
+### Added — Parallel lens execution
+- `cli.py` first-pass lenses (code_quality, governance, drift) run in parallel via `ThreadPoolExecutor`
+- CLI `--parallel / --no-parallel` flag (default: enabled)
+- Wall-time reduction: ≈ max(lens_time) instead of sum
+- `blind_spot` remains sequential after first-pass joins (it depends on prior findings)
+
+### Added — Test suite
+- `tests/` directory created with `conftest.py`, `test_discovery.py`, `test_evidence_verifier.py`, `test_cost_tracker.py`, `test_rubric.py`
+- 35 unit tests covering deterministic logic (no API calls): file discovery, entry-point detection, evidence substring matching, cost math, rubric loading + schema validation
+- Pytest config in `pyproject.toml`. `[project.optional-dependencies] dev = ["pytest", "pytest-mock"]`
+- Fixtures: `tiny_clean_repo`, `tiny_dirty_repo` for positive/negative path tests
+- All 35 tests pass cleanly
+
+### Deferred to v1.3
+- Phase G (BH consume external MCPs: sequential-thinking, playwright, context7, firecrawl)
+- Phase R (baseline drift mode)
+- Phase S (content-hash caching across audits)
+- Phase O (GitHub Actions workflow example)
+- Phase P (GitHub URL ingest)
+- Phase Q (HITL queue for ambiguous findings)
+- Code-writing apply mode (requires v1.2 suggest-mode field validation)
+
 ## [1.1.0] — 2026-05-21
 
 The "identity-layer" release. Black Heron becomes a real operational agent, not just a CLI script.

@@ -1,7 +1,7 @@
 [project]
 name = "black-heron"
-version = "1.1.0"
-description = "Governance-first 4-lens repository audit agent with adversarial Opus verifier, evidence-presence pre-check, versioned rubric, SARIF output, MCP server, BLOCK-level hooks, sub-agent definitions, memory persistence, recursive self-audit"
+version = "1.2.0"
+description = "Governance-first 4-lens repository audit agent with adversarial Opus verifier, code-writing suggest mode, parallel lens execution, evidence pre-check, versioned rubric, SARIF output, MCP server, BLOCK-level hooks, sub-agents, memory persistence, recursive self-audit, 35-test pytest suite"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
@@ -13,6 +13,9 @@ dependencies = [
     "python-dotenv>=1",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-mock>=3"]
+
 [project.scripts]
 black-heron = "black_heron.cli:audit"
 
@@ -22,3 +25,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
