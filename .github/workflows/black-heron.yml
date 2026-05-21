@@ -1,0 +1,115 @@
+# Black Heron — example CI audit workflow
+#
+# Drop this file into your own repository at `.github/workflows/black-heron.yml`
+# and add the secret `ANTHROPIC_API_KEY` (Settings -> Secrets and variables -> Actions).
+# Findings will appear in the Security tab as Code Scanning alerts (SARIF) and as a
+# summary comment on each PR.
+
+name: Black Heron audit
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  workflow_dispatch:  # allow manual trigger from the Actions tab
+
+permissions:
+  contents: read
+  pull-requests: write       # for the summary PR comment
+  security-events: write     # for SARIF upload to Code Scanning
+
+jobs:
+  audit:
+    name: Multi-lens audit + verifier
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 30  # for `git log --oneline -30` inside the discovery step
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache Black Heron content-hash cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.black-heron/cache
+          # Key invalidates when the rubric or any lens prompt changes.
+          # For most PRs the cache hits and re-audits cost zero API calls.
+          key: bh-cache-${{ runner.os }}-v1.3.3-${{ hashFiles('rubric*.json') }}
+          restore-keys: |
+            bh-cache-${{ runner.os }}-v1.3.3-
+            bh-cache-${{ runner.os }}-
+
+      - name: Install Black Heron
+        run: |
+          # Public install — replace with `pip install black-heron` once published to PyPI.
+          pip install --quiet git+https://github.com/lipakjosip442-png/black-heron.git@main
+
+      - name: Run audit
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          black-heron . \
+            --out audit/ \
+            --cost-cap 2.0 \
+            --time-cap 300
+
+      - name: Upload SARIF to Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: audit/findings.sarif
+          category: black-heron
+
+      - name: Upload report artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: black-heron-report
+          path: |
+            audit/REPORT.md
+            audit/findings.json
+            audit/findings.sarif
+          retention-days: 30
+
+      - name: Comment summary on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '## Black Heron audit\n\n';
+            try {
+              const f = JSON.parse(fs.readFileSync('audit/findings.json', 'utf8'));
+              const v = f.verified || [];
+              const r = f.rejected || [];
+              const sev = (s) => v.filter(x => x.severity === s).length;
+              const p0 = sev('P0'), p1 = sev('P1'), p2 = sev('P2');
+              body += `**${v.length} verified** | ${p0} P0 / ${p1} P1 / ${p2} P2 | ${r.length} rejected by verifier\n\n`;
+              if (v.length === 0) {
+                body += 'Repo passes this audit pass.\n';
+              } else {
+                body += '<details><summary>Top findings (click to expand)</summary>\n\n';
+                v.slice(0, 10).forEach((finding, i) => {
+                  body += `${i+1}. **[${finding.severity}]** \`${finding.file}\` lines \`${finding.lines}\` — ${finding.claim}\n`;
+                });
+                body += '\nFull report in the workflow artifacts (`black-heron-report`) and the Security tab (Code Scanning).\n';
+                body += '</details>\n';
+              }
+              body += `\n*Audit cost: $${(f.metrics?.total_cost_usd ?? 0).toFixed(4)} | Cache: ${f.metrics?.cache?.hits ?? 0} hit / ${f.metrics?.cache?.misses ?? 0} miss*\n`;
+            } catch (e) {
+              body += `Audit failed or produced no findings.json: ${e.message}\n`;
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });

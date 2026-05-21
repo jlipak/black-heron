@@ -10,7 +10,7 @@ from .synthesis import VerifierResult
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2}
 SARIF_LEVEL = {"P0": "error", "P1": "warning", "P2": "note"}
-BLACK_HERON_VERSION = "1.3.2"
+BLACK_HERON_VERSION = "1.3.3"
 
 
 def write_report(

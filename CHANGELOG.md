@@ -2,6 +2,42 @@
 
 All notable changes to Black Heron. SemVer.
 
+## [1.3.3] — 2026-05-22
+
+The "ship-it" release. Phase O ships a copy-paste GitHub Actions workflow template + closes the FM9 gap (cache now also covers the MCP server path, not just the CLI).
+
+### Added — GitHub Actions workflow template
+- `.github/workflows/black-heron.yml` — runs on PR + push to main + manual dispatch:
+  - Sets up Python 3.11, restores `~/.black-heron/cache` from `actions/cache@v4` (key invalidates on rubric change so the cache stays honest)
+  - `pip install` Black Heron from the git ref
+  - Runs `black-heron .` with `--cost-cap 2.0 --time-cap 300` defaults appropriate for CI
+  - Uploads `audit/findings.sarif` to Code Scanning (`github/codeql-action/upload-sarif@v3`)
+  - Uploads `audit/REPORT.md` + `findings.json` + `findings.sarif` as workflow artifacts (30-day retention)
+  - Posts a PR comment summary: verified count by severity, top 10 findings, cost, cache hit/miss
+- Permissions configured for `contents:read` + `pull-requests:write` + `security-events:write`. No more.
+- `secrets.ANTHROPIC_API_KEY` is the only required setup — document this in repo secrets once.
+
+### Fixed — FM9: cache now wraps MCP server lens calls
+- `mcp_server.py` `audit_repository` tool: all 3 first-pass lens calls + the blind_spot pass now go through `run_lens_with_cache` (same wrapper as `cli.py`).
+- `mcp_server.py` `quick_scan` tool: code_quality call wrapped.
+- New tool args: `no_cache: bool` + `cache_dir: str` (both optional, defaults match CLI).
+- `metrics.cache` is now populated in the MCP server's output report too.
+
+### Discipline
+- Phase O workflow honors Law XI: never pushes anywhere, just reads + writes SARIF/artifacts. Comments on PR but doesn't touch git refs.
+- The CI cache (`actions/cache@v4`) is scoped by `runner.os + version + hash(rubric*.json)`. Rubric edit -> fresh cache. Lens-prompt edit without rubric bump -> stale cache (FM10 still applies — use `--no-cache` if you suspect drift).
+- v1.3.3 bumps `SERVER_VERSION` in `mcp_server.py` to match `pyproject.toml`.
+
+### Tests (103 -> 103, unchanged)
+- No new unit tests for FM9 fix — the cache wrapper itself has 22 tests in `test_cache.py`; FM9 was a wiring change, not a new module.
+- The Phase O workflow is artifact-only (YAML), not code — tested by running it against a target repo (not in unit suite).
+
+### Files touched
+- New: `.github/workflows/black-heron.yml` (ready-to-copy CI workflow).
+- Patched: `mcp_server.py` (+ cache imports, + cache state in `audit_repository` and `quick_scan`, + `metrics.cache` field, + SERVER_VERSION bump), `report.py` (version), `pyproject.toml` (version + description).
+
+---
+
 ## [1.3.2] — 2026-05-21
 
 The "content-hash cache" release. Phase S: re-running Black Heron on an unchanged repo (or one where only a non-load-bearing file changed) skips the Anthropic API entirely for any lens whose `(ctx, lens, model, rubric_version)` quadruple matches a prior run. Backward-compatible; cache is enabled by default. `--no-cache` reverts to v1.3.1 behavior (every lens calls the API).

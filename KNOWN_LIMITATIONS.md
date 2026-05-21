@@ -76,15 +76,11 @@ Honest documentation of what Black Heron does *not* do yet, what known failure m
 
 **Residual risk:** Black Heron doesn't itself fetch the git log diff between baseline and now. v1.4 candidate: auto-link closed findings to commits that touched the referenced file between the baseline timestamp and now.
 
-### FM9 — Cache covers CLI only; MCP server still calls API every time (v1.3.2)
+### FM9 — Cache covers CLI only; MCP server still calls API every time *(RESOLVED in v1.3.3)*
 
-**What happens.** `src/black_heron/cache.py` short-circuits the Anthropic API call when `(ctx_hash, lens_name, lens_model, rubric_version)` matches a prior cached entry. The integration is in `cli.py`. `mcp_server.py`'s `audit_repository` tool still goes through `ALL_LENSES[name](ctx, client, tracker)` directly, hitting the API on every invocation regardless of repo state.
+~~v1.3.2: Cache was wired in `cli.py` only. `mcp_server.py` lens calls (`audit_repository` and `quick_scan` tools) hit the API every invocation regardless of repo state.~~
 
-**Why.** v1.3.2 prioritized the CLI path because that's where re-audit iteration is most common (developer running BH against the same repo across small edits). MCP-server calls are typically one-off from automation contexts.
-
-**Mitigation.** Use the CLI path when iterating. Run via MCP server only for orchestrated automation runs. v1.3.3 candidate: lift the cache wrapper to a shared helper that both `cli.py` and `mcp_server.py` import.
-
-**Residual risk:** If you wire BH-as-MCP into a Claude Code session and re-invoke `audit_repository` repeatedly during a debugging session, every call burns full API cost.
+**Resolved in v1.3.3:** `mcp_server.py` now uses the same `run_lens_with_cache` wrapper as the CLI. Both `audit_repository` and `quick_scan` tools accept optional `no_cache` and `cache_dir` args. The `metrics.cache` field is populated in the MCP report output too.
 
 ### FM10 — Cache key cannot detect lens prompt edits outside the version-bump path (v1.3.2)
 

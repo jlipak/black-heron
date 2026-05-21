@@ -19,16 +19,34 @@ import anthropic
 from dotenv import load_dotenv
 
 from ._models import Finding, Rubric
+from .cache import (
+    DEFAULT_CACHE_DIR,
+    CacheStats,
+    compute_ctx_hash,
+    compute_findings_hash,
+    run_lens_with_cache,
+)
 from .cost_tracker import CostTracker
 from .discovery import build_context
 from .lenses import ALL_LENSES, run_blind_spot
+from .lenses.blind_spot import MODEL as BLIND_SPOT_MODEL
+from .lenses.code_quality import MODEL as CODE_QUALITY_MODEL
+from .lenses.drift import MODEL as DRIFT_MODEL
+from .lenses.governance import MODEL as GOVERNANCE_MODEL
 from .report import write_report
 from .rubric import load_rubric
 from .synthesis import synthesize, VerifierResult
 
+LENS_MODELS = {
+    "code_quality": CODE_QUALITY_MODEL,
+    "governance": GOVERNANCE_MODEL,
+    "drift": DRIFT_MODEL,
+    "blind_spot": BLIND_SPOT_MODEL,
+}
+
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "black-heron"
-SERVER_VERSION = "1.3.1"
+SERVER_VERSION = "1.3.3"
 
 
 TOOLS_DESCRIPTOR = [
@@ -130,17 +148,42 @@ def tool_audit_repository(args: dict) -> dict:
     ctx = build_context(repo_path, extra_ignores=rubric.ignore_patterns)
     client = anthropic.Anthropic()
 
+    no_cache = bool(args.get("no_cache", False))
+    cache_dir = Path(args["cache_dir"]).resolve() if args.get("cache_dir") else DEFAULT_CACHE_DIR
+    cache_stats = CacheStats(cache_dir=str(cache_dir), enabled=not no_cache)
+    ctx_hash = compute_ctx_hash(ctx)
+
     all_findings: list[Finding] = []
     raw_counts: dict[str, int] = {}
     first_pass = [n for n in lens_list if n != "blind_spot"]
     for name in first_pass:
         if tracker.exceeded():
             break
-        findings = ALL_LENSES[name](ctx, client, tracker)
+        findings = run_lens_with_cache(
+            lens_name=name,
+            lens_model=LENS_MODELS[name],
+            ctx_hash=ctx_hash,
+            rubric_version=rubric.rubric_version,
+            cache_dir=cache_dir,
+            cache_stats=cache_stats,
+            enabled=not no_cache,
+            lens_call=lambda n=name: ALL_LENSES[n](ctx, client, tracker),
+        )
         raw_counts[name] = len(findings)
         all_findings.extend(findings)
     if "blind_spot" in lens_list and not tracker.exceeded():
-        findings = run_blind_spot(ctx, all_findings, client, tracker)
+        prior_hash = compute_findings_hash(all_findings)
+        findings = run_lens_with_cache(
+            lens_name="blind_spot",
+            lens_model=LENS_MODELS["blind_spot"],
+            ctx_hash=ctx_hash,
+            rubric_version=rubric.rubric_version,
+            prior_findings_hash=prior_hash,
+            cache_dir=cache_dir,
+            cache_stats=cache_stats,
+            enabled=not no_cache,
+            lens_call=lambda: run_blind_spot(ctx, all_findings, client, tracker),
+        )
         raw_counts["blind_spot"] = len(findings)
         all_findings.extend(findings)
 
@@ -151,6 +194,7 @@ def tool_audit_repository(args: dict) -> dict:
         "raw_finding_counts": raw_counts,
         "rubric_version": rubric.rubric_version,
         "rubric_source": rubric.source,
+        "cache": cache_stats.to_dict(),
     }
     write_report(out_dir, ctx, verifier, raw_counts, metrics)
 
@@ -208,10 +252,26 @@ def tool_quick_scan(args: dict) -> dict:
     tracker = CostTracker(cost_cap_usd=rubric.cost_cap_usd)
     ctx = build_context(repo_path, extra_ignores=rubric.ignore_patterns)
     client = anthropic.Anthropic()
-    findings = ALL_LENSES["code_quality"](ctx, client, tracker)
+
+    no_cache = bool(args.get("no_cache", False))
+    cache_dir = Path(args["cache_dir"]).resolve() if args.get("cache_dir") else DEFAULT_CACHE_DIR
+    cache_stats = CacheStats(cache_dir=str(cache_dir), enabled=not no_cache)
+    ctx_hash = compute_ctx_hash(ctx)
+
+    findings = run_lens_with_cache(
+        lens_name="code_quality",
+        lens_model=LENS_MODELS["code_quality"],
+        ctx_hash=ctx_hash,
+        rubric_version=rubric.rubric_version,
+        cache_dir=cache_dir,
+        cache_stats=cache_stats,
+        enabled=not no_cache,
+        lens_call=lambda: ALL_LENSES["code_quality"](ctx, client, tracker),
+    )
     summary = (
         f"Quick scan (code_quality lens only) on {repo_path.name}: "
-        f"{len(findings)} findings, ${tracker.cost_so_far:.3f}.\n\n"
+        f"{len(findings)} findings, ${tracker.cost_so_far:.3f}, "
+        f"cache {cache_stats.hits}H/{cache_stats.misses}M.\n\n"
         + "\n".join(f"- [{f.severity}] {f.file} {f.lines}: {f.claim}" for f in findings[:10])
     )
     return {"content": [{"type": "text", "text": summary}]}

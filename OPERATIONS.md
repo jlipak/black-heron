@@ -82,7 +82,44 @@ Drift triggers (any one moves a finding to `drifted`):
 
 Missing / malformed baseline = `REPORT.md` shows the skip reason in the drift section; audit completes normally. The drift compute is pure set-arithmetic — adds essentially no wall time to the audit.
 
-### Content-hash cache (v1.3.2 / Phase S)
+### GitHub Actions CI workflow (v1.3.3 / Phase O)
+
+Drop `.github/workflows/black-heron.yml` from this repo into the target repo's `.github/workflows/` directory and add `ANTHROPIC_API_KEY` as a repo secret (Settings → Secrets and variables → Actions). Findings will land in the Security tab as Code Scanning alerts on every PR.
+
+The workflow:
+
+```yaml
+# excerpt
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  workflow_dispatch:  # manual trigger from Actions tab
+
+# Restores ~/.black-heron/cache between runs (actions/cache@v4).
+# Key invalidates on rubric change so cache stays honest.
+key: bh-cache-${{ runner.os }}-v1.3.3-${{ hashFiles('rubric*.json') }}
+```
+
+What each run does:
+1. Checkout (last 30 commits — needed for the drift lens's git-log scan)
+2. Set up Python 3.11
+3. Restore content-hash cache from previous run
+4. `pip install` Black Heron from the public git ref
+5. Run `black-heron .` with `--cost-cap 2.0 --time-cap 300` defaults
+6. Upload `audit/findings.sarif` to GitHub Code Scanning
+7. Upload `audit/REPORT.md` + `findings.json` + `findings.sarif` as workflow artifacts (30 days)
+8. On PR runs only: post a summary comment with verified count, top 10 findings, cost, and cache hit ratio
+
+The workflow asks for these permissions explicitly: `contents:read`, `pull-requests:write` (for the summary comment), `security-events:write` (for SARIF upload). No more — Law XI compliant (no git push, no remote-state mutation).
+
+**Cost expectation per CI run:**
+- First PR or rubric change: full audit (~$0.50-2.00 depending on repo size)
+- Subsequent PRs with code edits but unchanged rubric: cache hits on lenses where files didn't change in the file listing; partial spend
+- PR that only changes docs/markdown: high cache-hit ratio; ~$0.10 or less
+
+### Content-hash cache (v1.3.2 / Phase S, extended to MCP server in v1.3.3)
 
 Black Heron caches lens outputs at `~/.black-heron/cache/`. On a re-audit, if the repo content + lens model + rubric version are unchanged, the prior lens output is replayed without an Anthropic API call.
 
