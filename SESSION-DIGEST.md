@@ -1,65 +1,58 @@
-# Session Digest — 2026-05-21 / 2026-05-22 (v1.0 → v1.1 → v1.2 marathon)
+# Session Digest — 2026-05-21 (Phase G shipped)
 
-## What Happened This Session
+## Quick State
+- Project: black-heron
+- Directory: /c/Users/DOBY/Desktop/black-heron
+- Branch: master
+- Last commit: `96992f5` v1.3.0 Phase G: external MCP enrichment (context7 / sequential-thinking / firecrawl / playwright)
+- Uncommitted: just this digest
+- Version: **v1.3.0** (was v1.2.0)
+- Tests: **57 passing** (was 35)
 
-1. **v0.1 → v1.0 (early evening):** 4-lens pipeline, adversarial Opus verifier, evidence pre-check, versioned rubric, SARIF output, KNOWN_LIMITATIONS, examples on QURE clean staging.
-2. **v1.0 → v1.1 (night):** Identity layer (CLAUDE.md, LAW.md with 15 sacred laws, MEMORY.md, SESSION-DIGEST.md), 4 behavioral rules, 5 BLOCK-level hooks, 5 skills, 6 sub-agent definitions, MCP stdio server with 3 tools, memory persistence (`session.py` + `~/.black-heron/calibration.json`), self-audit run + commit, 4 new docs (ARCHITECTURE, OPERATIONS, CHANGELOG, CONTRIBUTING), models flipped to Opus-only.
-3. **v1.1 → v1.2 (late night):** Code-writing suggest mode (`code_writer.py`), parallel lens execution via ThreadPoolExecutor, 35-test pytest suite (all pass).
-4. **All committed** to local git as commit `a72d70e` (v1.1 baseline). v1.2 changes pending second commit.
+## What shipped this session
 
-## Key Decisions
+Phase G — Black Heron now consumes external MCP servers to enrich audit context. Default `--enrich none`; backward-compatible.
 
-- **Opus everywhere by default.** Sonnet only via `--budget-mode`. Haiku not used.
-- **15 sacred laws** in `LAW.md`, every one evidence-backed (Apollo / QURE / AKIRA collapse).
-- **4-layer architecture** (Global → Project CLAUDE.md → .claude/rules/ → memory/MEMORY.md) — single source of truth per layer.
-- **BLOCK-level hooks only** (exit 2). WARN-level has 86% violation rate (AKIRA evidence).
-- **Anti-self-trip** in secret-scan hook: sensitive substrings reassembled at runtime so the script itself isn't blocked by upstream secret-scanners.
-- **Suggest-only patches in v1.2.** No auto-apply. SHIKA reviews + applies manually.
-- **Parallel lens execution** via threads (sync API calls). Async refactor deferred.
-- **35 tests pass deterministically** — no API budget consumed for unit tests.
-- **Skipped for v1.3:** external MCP consumption (G), baseline drift (R), content-hash cache (S), GitHub URL ingest (P), HITL queue (Q).
+### Code (10 new files, 6 modified)
+- `src/black_heron/mcp_consumers/` package — generic JSON-RPC stdio MCP client, config schema, bundled `mcp.default.json`, 4 enricher adapters (context7 / sequential-thinking / firecrawl / playwright), shared `_base.py` protocol + `EnrichmentReport`.
+- `src/black_heron/enrichment.py` — orchestrator (`parse_enrich_flag` + `enrich_context`). Per-enricher exception isolation; one failing enricher never aborts the audit.
+- `_models.RepoContext.external_enrichments: dict[str, str]` — new field, default empty.
+- `lenses/_common.py` — prompt builder appends "External MCP enrichments" section with discipline note (enrichment is advisory, NOT in-repo evidence).
+- `cli.py` — `--enrich none|all|csv` + `--mcp-config <path>`. Invalid name exits 2 with available list. Panel header shows `Enrich:`.
+- `report.py` + `mcp_server.py` — version bump 1.3.0. REPORT.md "Metrics" gained "MCP enrichment" table. `Honest scope` footer is now version-agnostic.
 
-## Current State
+### Tests (4 new files, 22 new tests, 35 → 57)
+- `tests/fixtures/fake_mcp_server.py` — minimal stdio MCP server in pure Python.
+- `tests/test_mcp_client.py` (5) — real subprocess roundtrip incl. error path + missing-binary `McpInitializeError`.
+- `tests/test_enrichment.py` (7) — flag parsing, orchestrator dispatch, exception isolation.
+- `tests/test_mcp_consumers.py` (10) — per-enricher input extraction + config loader + library-id parsing.
 
-- **Version:** 1.2.0 (pending second commit)
-- **Phases complete v1.1:** A, B, C, D, E, F, I, J, K (10 phases)
-- **Phases complete v1.2:** H, L, N (3 phases)
-- **Models active:** Opus 4.6 (lenses + writer) / Opus 4.7 (verifier + patch verifier)
-- **Tests:** 35 passing
-- **Cost this session:** ~$3.50 cumulative (mostly self-audit + BH builds)
-- **QURE clean-staging:** awaits push tomorrow morning pre-R3 (separate session, separate repo)
-- **BH local commit:** a72d70e (v1.1 baseline). v1.2 not yet committed — next session commits + considers push.
+### Docs (5 files updated)
+- `CHANGELOG.md` — full v1.3.0 entry (~60 lines).
+- `README.md` — v1.0 → v1.3 banner; install guide gained `--enrich` examples + `npx` install hints.
+- `OPERATIONS.md` — v1.1 → v1.3; new section with per-enricher contribution table + custom mcp-config example.
+- `KNOWN_LIMITATIONS.md` — FM6 added (enrichment as fabrication surface) with mitigation.
+- `MEMORY.md` — NEXT updated: Phase G marked done; resume command is now `cook v1.3 phase R`.
 
-## Gotchas / Warnings
+## Verified this session
+- `py -m pytest -q` → **57 passed in 0.46s**
+- `black-heron . --dry-run --enrich none` → identical to v1.2 (prompt 79987 chars before / 80141 after counting new mcp_consumers files in the repo, not enrichment payload)
+- `black-heron . --dry-run --enrich all` → 4 clear "binary unavailable" skips since `npx` isn't on this Windows box; audit continued; REPORT.md would render the skip table
+- `black-heron . --dry-run --enrich nope` → exits 2 with "Unknown enricher(s) ['nope']. Available: [...]"
+- `py -m pip show black-heron` → Version: 1.3.0
 
-- **Self-audit at v1.1 surfaced 7 P1 findings in BH itself.** 4 fixed in-session (hardcoded path, py launcher portability, silent exception swallow, heterogeneous lens registry doc). 3 remain documented in SELF-AUDIT-LATEST.md (lens duplication refactor candidate, evidence_verifier boundary search, cost tracker fallback inflation risk). All v1.3 candidates.
-- **Cost tracker is reactive, not preemptive.** A lens call that pushes over the cap is allowed to complete. Effective cap is "no NEW call after exceeded." Last self-audit ran $2.89 over $2 cap. Fix: pre-emptive cap check before each call, or raise default to $3.
-- **MCP server is registered but NOT installed in `~/.claude.json` yet.** Run `bash scripts/install-mcp.sh` to wire up.
-- **Hooks are written but NOT deployed to `~/.claude/hooks/`.** Run `bash scripts/install-hooks.sh`.
-- **`pip install -e .` was run during build.** If SHIKA reinstalls or moves repo, re-run.
-- **Tests need `pip install pytest pytest-mock`** (in `[project.optional-dependencies] dev`).
-- **BH context will be near-full at next boot** — don't load source code at boot, only memory + rules + digest.
+## Architecture nuances worth carrying forward
+- Generic MCP client uses one stdout reader thread + a `queue.Queue` — sync-blocking from the caller, matches BH's non-async style.
+- Each enricher resolves the actual tool name at runtime against `tools/list` — handles servers that use `firecrawl_scrape` vs `firecrawl.scrape` vs `scrape` without code changes.
+- URL extraction has a priority pool (README / CHANGELOG / CONTRIBUTING / ARCHITECTURE / OPERATIONS / PHILOSOPHY) before falling back to other files; localhost/private ranges (10/192.168) auto-skipped.
+- Context7 library detection is manifest-only (pyproject / package.json / requirements.txt) — never reads source samples, per Law V (samples are coverage, not authoritative).
+- Enrichment is intentionally absent from `mcp_server.py` (BH-as-MCP server) because when BH is invoked from a Claude Code session, the host already has those MCP servers loaded — calling them again via subprocess would be redundant.
 
-## NEXT (priority order)
+## Honest gaps for v1.4
+- MCP-call cost is bytes-and-time only, not part of `--cost-cap` (MCP calls don't go through the Anthropic API).
+- No retry on transient MCP errors; one failure per item drops that item.
+- Bundled `npx` commands aren't version-pinned (latest from registry).
+- Cross-audit caching of context7 docs would be a free win (Phase S touches this anyway).
 
-- [ ] **Sleep first.** QURE R3 sutra ujutro. Discipline > extra work.
-- [ ] BH v1.2 commit + push prep — when SHIKA authorizes `BH_ALLOW_PUSH=1`.
-- [ ] QURE clean-staging push to `lipakjosip442-png/qure-compliance` (PRIVATE) — Friday morning, top priority.
-- [ ] Optional: BH v1.2 push to `lipakjosip442-png/black-heron` (PRIVATE) — after QURE.
-- [ ] R3 prep: REHEARSAL cold-read, dashboard live demo test, posture reminders.
-- [ ] Post-R3: BH v1.3 sprint — Phase G (external MCPs), Phase R (baseline), Phase S (cache).
-- [ ] Self-audit refactor candidates: lens duplication helper, cost tracker preemptive cap, evidence_verifier boundary handling.
-
-## Cross-References
-
-- `CLAUDE.md` — identity + constraints
-- `LAW.md` — 15 sacred laws
-- `MEMORY.md` — operational state
-- `KNOWN_LIMITATIONS.md` — honest gaps
-- `SELF-AUDIT-LATEST.md` — BH on BH, latest run
-- `CHANGELOG.md` — version history
-- `~/.black-heron/calibration.json` — running aggregate metrics
-
----
-
-*Generated 2026-05-22 ~01:30 CEST. SHIKA's session.*
+## Resume next session
+**`cook v1.3 phase R`** — baseline drift-over-time mode (`--baseline previous.json`). Reads a prior findings.json, runs a fresh audit, surfaces new/closed/persisting findings as a diff. Boot reads MEMORY.md NEXT first; this digest second.
