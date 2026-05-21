@@ -19,7 +19,9 @@ from ._models import Rubric
 from .code_writer import suggest_patches
 from .cost_tracker import CostTracker
 from .discovery import build_context
+from .enrichment import enrich_context, parse_enrich_flag
 from .lenses import ALL_LENSES, run_blind_spot
+from .mcp_consumers import ALL_ENRICHERS, load_mcp_config
 from .report import write_report
 from .rubric import load_rubric
 from .session import SessionRecord, session_id_now, utcnow_iso, write_session
@@ -71,6 +73,20 @@ console = Console()
     default=True,
     help="Run first-pass lenses (code_quality, governance, drift) in parallel via ThreadPoolExecutor. Default: enabled.",
 )
+@click.option(
+    "--enrich",
+    "enrich_arg",
+    default="none",
+    help="External MCP enrichment: 'none' (default), 'all', or comma list (context7,sequential-thinking,firecrawl,playwright). "
+         "Each enricher is skipped silently if its binary is not on PATH.",
+)
+@click.option(
+    "--mcp-config",
+    "mcp_config_path",
+    type=click.Path(dir_okay=False, exists=True, path_type=Path),
+    default=None,
+    help="Path to a custom MCP config JSON. Falls back to ~/.black-heron/mcp.json, then bundled default.",
+)
 def audit(
     repo_path: Path,
     lens_arg: str,
@@ -82,6 +98,8 @@ def audit(
     dry_run: bool,
     mode: str,
     parallel: bool,
+    enrich_arg: str,
+    mcp_config_path: Path | None,
 ) -> None:
     """Run a Black Heron audit on REPO_PATH and write reports to --out."""
     if env_path is not None:
@@ -112,9 +130,10 @@ def audit(
         lens_list = enabled_in_rubric
 
     console.print(Panel.fit(
-        f"[bold]Black Heron v1.0[/bold] — multi-lens repository audit\n"
+        f"[bold]Black Heron v1.3[/bold] — multi-lens repository audit\n"
         f"Repo: [cyan]{repo_path}[/cyan]\n"
         f"Lenses: {', '.join(lens_list)}\n"
+        f"Enrich: {enrich_arg or 'none'}\n"
         f"Rubric: [magenta]{rubric.rubric_version}[/magenta] | "
         f"Cost cap: ${rubric.cost_cap_usd:.2f} | Time cap: {rubric.time_cap_seconds}s"
         + ("  [yellow](DRY RUN)[/yellow]" if dry_run else ""),
@@ -131,6 +150,32 @@ def audit(
         f"TODOs: {ctx.todo_count} | git commits: {len(ctx.git_log_recent)} | "
         f"entry-points: {len(ctx.entry_points)}"
     )
+
+    try:
+        enrich_list = parse_enrich_flag(enrich_arg, list(ALL_ENRICHERS.keys()))
+    except ValueError as e:
+        console.print(f"[red]{e}[/red]")
+        sys.exit(2)
+    enrichment_reports: list = []
+    if enrich_list:
+        mcp_config = load_mcp_config(mcp_config_path)
+        console.print(
+            f"[bold]MCP enrichment[/bold] (source: [magenta]{mcp_config.source}[/magenta]): "
+            f"{', '.join(enrich_list)}"
+        )
+        with console.status("[bold]Enrichment[/bold] — calling external MCP servers..."):
+            ctx, enrichment_reports = enrich_context(ctx, enrich_list, mcp_config)
+        for rep in enrichment_reports:
+            if rep.available and rep.items_fetched:
+                console.print(
+                    f"  [green]{rep.name}[/green]: "
+                    f"{rep.items_fetched} item(s), {rep.bytes_fetched} bytes, "
+                    f"{rep.wall_seconds:.1f}s"
+                )
+            else:
+                console.print(
+                    f"  [yellow]{rep.name}[/yellow]: skipped — {rep.skipped_reason}"
+                )
 
     if dry_run:
         from .lenses._common import build_repo_prompt
@@ -249,6 +294,7 @@ def audit(
         "rubric_source": rubric.source,
         "mode": mode,
         "suggested_patches_count": len(suggested_patches),
+        "enrichment": [r.as_metric() for r in enrichment_reports],
     }
     write_report(out_dir, ctx, verifier, raw_counts, metrics, suggested_patches)
     console.print(

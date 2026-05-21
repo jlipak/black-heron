@@ -48,6 +48,22 @@ def build_repo_prompt(ctx: RepoContext, *, max_files_listed: int = 200) -> str:
     for path, content in ctx.sample_files.items():
         parts.append(f"\n### {path}\n```\n{content}\n```")
 
+    if getattr(ctx, "external_enrichments", None):
+        parts.append("")
+        parts.append("---")
+        parts.append("# External MCP enrichments")
+        parts.append("")
+        parts.append(
+            "The blocks below come from external MCP servers (context7, firecrawl, playwright, "
+            "sequential-thinking) and are advisory context. Treat them like documentation, NOT "
+            "like in-repo evidence: a finding's `evidence` field must still be a verbatim "
+            "substring of an in-repo file unless the finding explicitly cites an enrichment "
+            "block and the claim is about that external resource itself."
+        )
+        for name, payload in ctx.external_enrichments.items():
+            parts.append("")
+            parts.append(payload)
+
     return "\n".join(parts)
 
 

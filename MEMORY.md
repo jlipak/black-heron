@@ -4,10 +4,10 @@
 
 ## NEXT (priority order)
 
-- [ ] **RESUME COMMAND for next session:** `cook v1.3 phase G` (BH consumes external MCPs — sequential-thinking, playwright, context7, firecrawl). Boot reads this file first; that's the next task.
-- [ ] BH v1.3 sprint (active, continues immediately):
-      - Phase G — BH consumes external MCPs (sequential-thinking, playwright, context7, firecrawl) ← START HERE
-      - Phase R — baseline drift-over-time mode (`--baseline previous.json`)
+- [ ] **RESUME COMMAND for next session:** `cook v1.3 phase R` (baseline drift-over-time mode `--baseline previous.json`). Phase G is shipped.
+- [x] Phase G — BH consumes external MCPs (context7, sequential-thinking, firecrawl, playwright). Shipped 2026-05-21. 57 tests passing. Default `--enrich none` so v1.2 commands unchanged.
+- [ ] BH v1.3 sprint (active, continues):
+      - Phase R — baseline drift-over-time mode (`--baseline previous.json`) ← START HERE next session
       - Phase S — content-hash caching across audits
       - Phase O — GitHub Actions workflow example
       - Phase P — GitHub URL ingest (`black-heron https://github.com/...`)
@@ -22,7 +22,7 @@
 
 ## Active Projects
 
-- **Black Heron v1.2** — code-writing + parallel + tests shipped. Uncommitted state in working tree. Local commit `a72d70e` is v1.1 baseline.
+- **Black Heron v1.3** — Phase G external-MCP enrichment shipped 2026-05-21. CLI `--enrich` opt-in, 4 enricher adapters, generic JSON-RPC stdio client, mcp.default.json bundled, 22 new tests (57 total). v1.2 features (code-writing + parallel + tests) still in place.
 - **QURE clean-staging** — awaits push (separate repo, separate session).
 
 ## SHIKA Profile
@@ -77,4 +77,4 @@
 - Average cost per audit: ~$2.89 (v1.1 self-audit, Opus-everywhere)
 - Average wall time: ~299s (parallel execution will reduce significantly in next run)
 - Verifier reject ratio average: 50% (v1.1 self-audit)
-- Tests: 35 passing
+- Tests: 57 passing (35 v1.2 baseline + 5 mcp_client + 7 enrichment + 10 mcp_consumers in Phase G)

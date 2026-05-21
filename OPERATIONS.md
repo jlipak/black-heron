@@ -1,4 +1,4 @@
-# Operations — Black Heron v1.1
+# Operations — Black Heron v1.3
 
 How to install, run, and operate Black Heron in real workflows.
 
@@ -48,6 +48,39 @@ Via MCP server (after install-mcp.sh):
 ```
 mcp__black_heron__quick_scan({"repo_path": "/path/to/repo"})
 ```
+
+### Audit with external MCP enrichment (v1.3 / Phase G)
+
+```bash
+# Opt in to all four enrichers; missing binaries skip silently
+black-heron /path/to/repo --enrich all --out audit/
+
+# Pin which enrichers run
+black-heron /path/to/repo --enrich context7,firecrawl --out audit/
+
+# Custom MCP config (per-server command, env, timeout, caps)
+black-heron /path/to/repo --enrich all --mcp-config ~/.black-heron/mcp.json
+```
+
+What each enricher contributes:
+
+| Enricher | Input it extracts | What it asks the MCP | Where it lands in the prompt |
+|---|---|---|---|
+| context7 | dependencies in pyproject/package/requirements | `resolve-library-id` + `query-docs` | "External library docs (via context7)" block |
+| firecrawl | URLs in README + docs (priority pool) | `firecrawl_scrape` | "External URLs (via firecrawl)" block |
+| playwright | URLs in README + docs | `browser_navigate` + `browser_snapshot` | "Rendered web entry-points (via playwright)" block |
+| sequential-thinking | repo metadata (no source) | `sequentialthinking` | "Architectural reasoning (via sequential-thinking)" block |
+
+Install MCP servers (any subset) before invoking BH:
+
+```bash
+npx -y @upstash/context7-mcp --help
+npx -y @modelcontextprotocol/server-sequential-thinking --help
+npx -y firecrawl-mcp --help
+npx -y @playwright/mcp --help
+```
+
+If a binary isn't on `PATH`, BH logs the skip in `REPORT.md` under "MCP enrichment" and keeps going. The lens prompts still contain a discipline note: enrichment is advisory context — a finding's `evidence` field must still be a verbatim substring of an in-repo file unless the claim is specifically about the external resource.
 
 Or via CLI:
 

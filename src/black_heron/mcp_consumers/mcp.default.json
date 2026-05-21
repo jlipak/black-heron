@@ -1,0 +1,50 @@
+{
+  "mcp_config_version": "1.0.0",
+  "source": "bundled-default",
+
+  "servers": {
+    "context7": {
+      "name": "context7",
+      "command": ["npx", "-y", "@upstash/context7-mcp"],
+      "env": {},
+      "timeout_seconds": 45,
+      "enabled_by_default": false,
+      "description": "Live library documentation lookup. Resolves library names and fetches up-to-date API docs.",
+      "max_items": 5,
+      "max_bytes_per_item": 8000
+    },
+
+    "sequential-thinking": {
+      "name": "sequential-thinking",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "env": {},
+      "timeout_seconds": 60,
+      "enabled_by_default": false,
+      "description": "Step-by-step reasoning over a problem. BH invokes it for borderline verifier findings to surface implicit chains.",
+      "max_items": 1,
+      "max_bytes_per_item": 6000
+    },
+
+    "firecrawl": {
+      "name": "firecrawl",
+      "command": ["npx", "-y", "firecrawl-mcp"],
+      "env": {},
+      "timeout_seconds": 60,
+      "enabled_by_default": false,
+      "description": "Fetches and converts URLs to markdown. BH uses it to verify external links referenced in README/docs.",
+      "max_items": 3,
+      "max_bytes_per_item": 4000
+    },
+
+    "playwright": {
+      "name": "playwright",
+      "command": ["npx", "-y", "@playwright/mcp"],
+      "env": {},
+      "timeout_seconds": 90,
+      "enabled_by_default": false,
+      "description": "Headless browser. BH uses it sparingly to verify JS-rendered web entry-points referenced in repo docs.",
+      "max_items": 1,
+      "max_bytes_per_item": 4000
+    }
+  }
+}

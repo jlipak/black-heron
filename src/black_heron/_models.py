@@ -46,6 +46,7 @@ class RepoContext(BaseModel):
     entry_points: list[EntryPoint] = []
     git_log_recent: list[str]
     todo_count: int
+    external_enrichments: dict[str, str] = Field(default_factory=dict)
 
 
 class SuggestedPatch(BaseModel):

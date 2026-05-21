@@ -60,6 +60,17 @@ Honest documentation of what Black Heron does *not* do yet, what known failure m
 
 **Residual risk:** Short evidence quotes (< 20 chars) skip the substring check (too noisy). Evidence that the lens paraphrased rather than quoted verbatim will fail the check even when the underlying claim is sound. Trade-off: prefer false-rejection over false-acceptance.
 
+### FM6 — Enrichment as a fabrication surface (v1.3)
+
+**Symptom:** v1.3 enrichment pipes external MCP content into the prompt bundle. A lens could mistakenly cite an enrichment block as in-repo evidence — fabricating cross-file context that doesn't live in the actual repo.
+
+**Mitigation in v1.3:**
+- Each enrichment block is delimited by a clearly-labeled section header (`## External library docs (via context7)`, etc.)
+- The prompt builder includes an explicit discipline note: "Treat them like documentation, NOT like in-repo evidence: a finding's `evidence` field must still be a verbatim substring of an in-repo file unless the finding explicitly cites an enrichment block and the claim is about that external resource itself."
+- `evidence_verifier.py` substring-matches against the WHOLE prompt context (samples + entry-points + enrichments), so a finding whose evidence quotes an enrichment block won't be flagged as fabricated — but the verifier sees the source ("evidence in samples vs in enrichment block") and can downgrade enrichment-only findings.
+
+**Residual risk:** An aggressive lens could quote a context7 docs block, claim it's an in-repo issue, and pass evidence-presence. Verifier is the final filter. Honest target: keep enrichment opt-in (`--enrich none` default) so the failure surface is only exposed when the user has consciously elected it.
+
 ## Cost calibration
 
 Per-audit cost on a small TypeScript repo (~116 files, 4 lenses + verifier):

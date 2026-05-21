@@ -2,6 +2,67 @@
 
 All notable changes to Black Heron. SemVer.
 
+## [1.3.0] — 2026-05-21
+
+The "external-MCP enrichment" release. Phase G: Black Heron now consumes 3rd-party MCP servers to enrich its audit context — context7 for live library docs, firecrawl for external URLs, playwright for JS-rendered pages, sequential-thinking for architectural reasoning. Default: OFF; backward-compatible with all v1.2 commands.
+
+### Added — Generic JSON-RPC stdio MCP client
+- `src/black_heron/mcp_consumers/client.py` (~230 lines): subprocess-spawning client with initialize/tools-list/tools-call surface
+- Sync-blocking I/O with a stdout reader thread (matches BH's non-async architecture)
+- Explicit error classes: `McpInitializeError` (binary missing / handshake failure), `McpToolError` (call returned an error or timed out), `McpClientError` (parent)
+- Context-manager interface guarantees subprocess + thread cleanup
+- Stderr is drained into the BH log stream (`[mcp-stderr]` prefix) so we never silently hide server diagnostics
+
+### Added — MCP config schema + bundled defaults
+- `src/black_heron/mcp_consumers/config.py`: `McpServerSpec` + `McpConfig` Pydantic models, versioned via `mcp_config_version`
+- `mcp.default.json` ships 4 server entries: context7 (`npx @upstash/context7-mcp`), sequential-thinking (`npx @modelcontextprotocol/server-sequential-thinking`), firecrawl (`npx firecrawl-mcp`), playwright (`npx @playwright/mcp`)
+- All 4 ship `enabled_by_default: false` — Phase G is opt-in
+- User overrides at `~/.black-heron/mcp.json` are honored when present; `--mcp-config <path>` takes highest precedence
+
+### Added — 4 enricher adapters
+- `context7.py` — reads dependencies from `pyproject.toml` / `package.json` / `requirements.txt`, calls `resolve-library-id` → `query-docs`, embeds returned docs as a prompt block. Caps: 5 libs × 8KB.
+- `firecrawl.py` — extracts http(s) URLs from README and docs (priority pool) + other files (secondary), skips localhost/private ranges, calls `firecrawl_scrape`. Caps: 3 URLs × 4KB.
+- `playwright.py` — same URL extraction, calls `browser_navigate` + `browser_snapshot`. Caps: 1 URL × 4KB (browser spawn is expensive).
+- `sequential.py` — one-shot architectural reasoning over repo metadata via `sequentialthinking` tool. Caps: 1 thought × 6KB.
+- Shared `_base.py` exposes the `Enricher` protocol and `EnrichmentReport` dataclass.
+
+### Added — Enrichment orchestrator + RepoContext extension
+- `src/black_heron/enrichment.py`: `parse_enrich_flag()` + `enrich_context()`
+- `RepoContext` gained `external_enrichments: dict[str, str]` field — markdown payloads keyed by enricher name
+- `lenses/_common.py` prompt builder appends an "External MCP enrichments" section with a discipline note: lenses still need verbatim in-repo evidence for findings, enrichments are advisory context only
+- Per-enricher exception isolation: one enricher failing never aborts the audit; report shows which were skipped + why
+
+### Added — CLI flags `--enrich` + `--mcp-config`
+- `--enrich none` (default) — backward compatible; no behavior change
+- `--enrich all` — all 4 enrichers
+- `--enrich context7,firecrawl` — explicit comma list
+- Unknown names error out with exit code 2 + suggestion (no silent typo absorption)
+- `--mcp-config <path>` — override config source
+
+### Added — Tests
+- `tests/fixtures/fake_mcp_server.py` — minimal stdio MCP server for end-to-end client tests
+- `tests/test_mcp_client.py` (5 tests) — real subprocess roundtrip: initialize, tools/list, tools/call echo, error path, missing-binary error
+- `tests/test_enrichment.py` (7 tests) — flag parsing, orchestrator dispatch, exception isolation
+- `tests/test_mcp_consumers.py` (10 tests) — per-enricher input-extraction (library detection, URL extraction, priority pools, host-skip rules), config loader, JSON+markdown library-id parsing
+- Test count: 35 → 57. All passing.
+
+### Changed
+- `report.BLACK_HERON_VERSION` bumped to `1.3.0`
+- `mcp_server.SERVER_VERSION` bumped to `1.3.0`
+- CLI panel header now reads "Black Heron v1.3" and includes `Enrich:` line
+- `REPORT.md` "Metrics" section gained an "MCP enrichment" table when enrichers were requested
+- `findings.json` `metrics.enrichment` array — per-enricher available/items/bytes/wall/skip-reason
+
+### Compatibility
+- v1.3 is backward-compatible at the CLI: `black-heron <repo>` with no new flags behaves identically to v1.2
+- Existing rubric JSON files load unchanged (rubric_version `1.0.0` retained — enrichment is orthogonal to the rubric)
+- MCP server tools (`audit_repository`, `verify_findings`, `quick_scan`) unchanged in v1.3 — enrichment is CLI-only because BH-from-Claude-Code already has the host's MCP context
+
+### Known gaps (deferred to v1.4)
+- Enrichment cost is not reflected in the dollar `--cost-cap` (it's bytes-and-time only — MCP calls don't go through the Anthropic API)
+- No retry on transient MCP errors; one failure per item drops that item
+- Bundled npx commands haven't been version-pinned (relies on the latest the registry serves)
+
 ## [1.2.0] — 2026-05-22 (early morning)
 
 The "code-writer + parallel + tested" release.

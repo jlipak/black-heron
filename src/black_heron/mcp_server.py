@@ -28,7 +28,7 @@ from .synthesis import synthesize, VerifierResult
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "black-heron"
-SERVER_VERSION = "1.1.0"
+SERVER_VERSION = "1.3.0"
 
 
 TOOLS_DESCRIPTOR = [

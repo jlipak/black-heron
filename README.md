@@ -1,7 +1,7 @@
 # Black Heron
 
 > Multi-lens, governance-first repository audit agent with an adversarial verifier.
-> **v1.0** — 4 lenses, evidence-presence pre-check, versioned rubric, SARIF output.
+> **v1.3** — 4 lenses + adversarial Opus verifier, evidence-presence pre-check, versioned rubric, SARIF output, parallel lens execution, code-writing suggest mode, and external MCP enrichment (context7 / sequential-thinking / firecrawl / playwright).
 
 ```
        ___
@@ -15,16 +15,24 @@
 
 Run Black Heron on a local repository. It runs four independent lenses (`code_quality`, `governance`, `drift`, `blind_spot`) and pipes their findings through an adversarial verifier (Opus) that challenges each one. The output is a Markdown report, a structured JSON file, and a SARIF 2.1.0 file (GitHub Code Scanning compatible). No CI integration, no auto-fix, no patch generation — Black Heron is an **audit**, in the legal sense: a snapshot meant to inform a reviewer.
 
-**New in v1.0:**
-- 4th lens: `blind_spot` — runs after the first three, hunts meta-intersection issues that single-domain lenses miss
-- Entry-point files (`index.ts`, `package.json`, `__init__.py`, `pyproject.toml`, etc.) loaded with full content (10KB cap) for cross-file reasoning
-- Evidence-presence pre-check — substring-checks each finding's cited evidence against the input bundle, flags fabricated quotes before the LLM verifier even sees them
-- Versioned rubric (`rubric.default.json`) with confidence floors per severity, lens toggles, cost + time kill-switches
-- Cost tracker with per-lens accounting + cap enforcement
-- 5-minute prompt caching (ephemeral) on lens + verifier system prompts → ~30% cost reduction within a single audit
-- SARIF output for GitHub Code Scanning import
-- Volume-calibrated summary at the top of REPORT.md
-- Metrics block (latency, cost per lens, reject ratio, rubric version)
+**New in v1.3** — Phase G: external-MCP enrichment.
+- `--enrich context7,firecrawl,playwright,sequential-thinking` — opt in to one or more 3rd-party MCP servers; each enricher attaches its data to the prompt bundle the lenses see
+- `context7` → fetches live library docs for every dependency declared in `pyproject.toml` / `package.json` / `requirements.txt` so lenses reason against current APIs, not training-snapshot ones
+- `firecrawl` → fetches external URLs referenced in README / docs; verifies they are real and current
+- `playwright` → renders a JS-heavy public URL (admin panel, dashboard) so lenses see the page the docs claim exists
+- `sequential-thinking` → one-shot architectural reasoning over repo metadata, surfaced to the verifier
+- Each enricher gracefully skips if its binary isn't installed; missing MCP servers never fail the audit
+- Default is `--enrich none` so v1.2 commands behave identically
+
+**Earlier features (v1.0 → v1.2):**
+- 4 lenses with `blind_spot` running last to catch meta-intersection issues
+- Entry-point files loaded with full content for cross-file reasoning
+- Evidence-presence pre-check (substring-match every finding's quote against the input bundle)
+- Versioned rubric with confidence floors per severity, lens toggles, cost + time kill-switches
+- Parallel lens execution (`--parallel`, default on) — first-pass lenses run on a `ThreadPoolExecutor`
+- Code-writing suggest mode (`--mode suggest`) — drafts unified-diff patches for verified P0/P1 findings, with an Opus 4.7 adversarial patch-reviewer; never auto-applied
+- 5-minute prompt caching on lens + verifier system prompts
+- SARIF 2.1.0 output for GitHub Code Scanning
 
 ## Install + run
 
@@ -38,6 +46,31 @@ black-heron /path/to/some/repo --out audit/
 # OR:
 python -m black_heron.cli /path/to/some/repo --out audit/
 ```
+
+### Opt into external MCP enrichment (v1.3)
+
+```bash
+# All four enrichers; missing binaries skip silently
+black-heron /path/to/repo --enrich all --out audit/
+
+# Just live library docs
+black-heron /path/to/repo --enrich context7 --out audit/
+
+# Custom server commands / env / timeouts
+black-heron /path/to/repo --enrich all --mcp-config ~/.black-heron/mcp.json
+```
+
+Install the underlying MCP servers (any subset) with `npx`:
+
+```bash
+# Verifies they install + run; you can skip this — BH calls them lazily on demand
+npx -y @upstash/context7-mcp --help
+npx -y @modelcontextprotocol/server-sequential-thinking --help
+npx -y firecrawl-mcp --help
+npx -y @playwright/mcp --help
+```
+
+If a binary is missing, BH logs the skip in `REPORT.md` under "MCP enrichment" and continues — never a hard failure.
 
 Output:
 

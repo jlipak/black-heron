@@ -10,7 +10,7 @@ from .synthesis import VerifierResult
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2}
 SARIF_LEVEL = {"P0": "error", "P1": "warning", "P2": "note"}
-BLACK_HERON_VERSION = "1.0.0"
+BLACK_HERON_VERSION = "1.3.0"
 
 
 def write_report(
@@ -185,6 +185,22 @@ def _write_report_md(
                 lines.append(f"  - `{k}`: {t:.1f}s")
         lines.append(f"- **Rubric version:** `{metrics.get('rubric_version', '?')}` (source: `{metrics.get('rubric_source', '?')}`)")
         lines.append("")
+        enrichment_reports = metrics.get("enrichment") or []
+        if enrichment_reports:
+            lines.append("### MCP enrichment")
+            lines.append("")
+            lines.append("| Enricher | Available | Items | Bytes | Wall (s) | Note |")
+            lines.append("|---|---|---|---|---|---|")
+            for r in enrichment_reports:
+                lines.append(
+                    f"| {r.get('name', '?')} "
+                    f"| {'yes' if r.get('available') else 'no'} "
+                    f"| {r.get('items_fetched', 0)} "
+                    f"| {r.get('bytes_fetched', 0)} "
+                    f"| {r.get('wall_seconds', 0)} "
+                    f"| {r.get('skipped_reason') or 'ok'} |"
+                )
+            lines.append("")
 
     lines.append("## Lens raw output")
     lines.append("")
@@ -255,7 +271,14 @@ def _write_report_md(
 
     lines.append("---")
     lines.append("")
-    lines.append("## Honest scope (v1.0)")
+    lines.append("## Honest scope")
     lines.append("")
-    lines.append("Black Heron v1.0 ships with: 4 lenses (code_quality, governance, drift, blind_spot), adversarial Opus verifier with severity confidence floors, evidence-presence pre-check, entry-point full-content loading, versioned rubric, cost + time kill-switches, SARIF output. Honest gaps documented in `KNOWN_LIMITATIONS.md`. See `README.md` for v1.1 roadmap.")
+    lines.append(
+        f"Black Heron v{BLACK_HERON_VERSION} ships with: 4 lenses (code_quality, governance, drift, blind_spot), "
+        "adversarial Opus verifier with severity confidence floors, evidence-presence pre-check, "
+        "entry-point full-content loading, versioned rubric, cost + time kill-switches, SARIF output, "
+        "code-writing suggest mode, parallel lens execution, and external MCP enrichment "
+        "(context7 / sequential-thinking / firecrawl / playwright). "
+        "Honest gaps documented in `KNOWN_LIMITATIONS.md`."
+    )
     path.write_text("\n".join(lines), encoding="utf-8")
