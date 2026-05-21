@@ -35,3 +35,5 @@ Thumbs.db
 # Audit output from running BH on something else (regenerable)
 audit/
 audit_output/
+audit-*/
+.bh-audit/
