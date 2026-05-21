@@ -76,6 +76,26 @@ Honest documentation of what Black Heron does *not* do yet, what known failure m
 
 **Residual risk:** Black Heron doesn't itself fetch the git log diff between baseline and now. v1.4 candidate: auto-link closed findings to commits that touched the referenced file between the baseline timestamp and now.
 
+### FM9 — Cache covers CLI only; MCP server still calls API every time (v1.3.2)
+
+**What happens.** `src/black_heron/cache.py` short-circuits the Anthropic API call when `(ctx_hash, lens_name, lens_model, rubric_version)` matches a prior cached entry. The integration is in `cli.py`. `mcp_server.py`'s `audit_repository` tool still goes through `ALL_LENSES[name](ctx, client, tracker)` directly, hitting the API on every invocation regardless of repo state.
+
+**Why.** v1.3.2 prioritized the CLI path because that's where re-audit iteration is most common (developer running BH against the same repo across small edits). MCP-server calls are typically one-off from automation contexts.
+
+**Mitigation.** Use the CLI path when iterating. Run via MCP server only for orchestrated automation runs. v1.3.3 candidate: lift the cache wrapper to a shared helper that both `cli.py` and `mcp_server.py` import.
+
+**Residual risk:** If you wire BH-as-MCP into a Claude Code session and re-invoke `audit_repository` repeatedly during a debugging session, every call burns full API cost.
+
+### FM10 — Cache key cannot detect lens prompt edits outside the version-bump path (v1.3.2)
+
+**What happens.** Cache key includes `rubric_version` and `lens_model` but not a hash of the lens prompt module itself. If you edit `src/black_heron/lenses/code_quality.py` to change the lens prompt without bumping the rubric or model, the cache continues to serve the old result for unchanged repos.
+
+**Why.** Hashing every lens module file would invalidate the cache on every developer edit (including comment-only changes), which defeats the purpose. The contract is: lens behavior is treated as immutable per `(rubric_version, lens_model)`.
+
+**Mitigation.** Use `--no-cache` after editing lens prompts, or bump `rubric_version` to force a fresh run, or run `purge_cache(cache_dir)` from a Python REPL.
+
+**Residual risk:** Quiet stale results for the engineer who edits lens prompts during development. Stable users (no lens prompt edits) are unaffected.
+
 ### FM6 — Enrichment as a fabrication surface (v1.3)
 
 **Symptom:** v1.3 enrichment pipes external MCP content into the prompt bundle. A lens could mistakenly cite an enrichment block as in-repo evidence — fabricating cross-file context that doesn't live in the actual repo.

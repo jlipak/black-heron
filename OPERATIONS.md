@@ -82,6 +82,42 @@ Drift triggers (any one moves a finding to `drifted`):
 
 Missing / malformed baseline = `REPORT.md` shows the skip reason in the drift section; audit completes normally. The drift compute is pure set-arithmetic — adds essentially no wall time to the audit.
 
+### Content-hash cache (v1.3.2 / Phase S)
+
+Black Heron caches lens outputs at `~/.black-heron/cache/`. On a re-audit, if the repo content + lens model + rubric version are unchanged, the prior lens output is replayed without an Anthropic API call.
+
+```bash
+# First run — cache is empty, all lenses call the API
+black-heron /path/to/repo --out audit/run1/
+# header: Cache: ~/.black-heron/cache (ctx hash 4f7a1b3c0d2e)
+
+# Second run, no code changes — every lens hits the cache, zero API spend
+black-heron /path/to/repo --out audit/run2/
+# Metrics line: Cache: 4 hit / 0 miss (dir: ~/.black-heron/cache)
+
+# Bypass when you suspect drift (lens prompt edit, model rollback, paranoia)
+black-heron /path/to/repo --out audit/run3/ --no-cache
+# Metrics line: Cache: disabled this run (4 lens calls bypassed)
+
+# Override the cache location (CI, separate workspaces, etc.)
+black-heron /path/to/repo --out audit/run4/ --cache-dir /tmp/my-cache/
+```
+
+Key composition: `sha256(ctx_hash | lens_name | lens_model | rubric_version | prior_findings_hash)`.
+
+| Cause of miss | Behavior |
+|---|---|
+| First run on a repo | Miss, then write — subsequent runs hit |
+| Any file content change | `ctx_hash` shifts — full miss for all lenses |
+| Lens model upgrade (e.g., 4.6 → 4.7) | Per-lens miss when `lens_model` changes |
+| Rubric version bump | All lenses miss (intentional — rubric edits should re-validate) |
+| Corrupted cache file on disk | Logged to stderr, treated as miss, lens re-runs |
+| `blind_spot` lens, prior findings changed | Miss (prior_findings_hash differs) |
+
+What it does NOT detect:
+- Lens prompt code edits without a rubric bump (FM10). Workaround: `--no-cache` or bump rubric_version.
+- The MCP-server lens path (FM9). Workaround: use the CLI.
+
 ### Audit with external MCP enrichment (v1.3 / Phase G)
 
 ```bash

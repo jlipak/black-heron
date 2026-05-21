@@ -1,7 +1,7 @@
 [project]
 name = "black-heron"
-version = "1.3.1"
-description = "Governance-first 4-lens repository audit agent with adversarial Opus verifier, code-writing suggest mode, parallel lens execution, external MCP enrichment (context7/sequential-thinking/firecrawl/playwright), baseline drift-over-time mode (--baseline), evidence pre-check, versioned rubric, SARIF output, MCP server, BLOCK-level hooks, sub-agents, memory persistence, recursive self-audit, 81-test pytest suite"
+version = "1.3.2"
+description = "Governance-first 4-lens repository audit agent with adversarial Opus verifier, code-writing suggest mode, parallel lens execution, external MCP enrichment (context7/sequential-thinking/firecrawl/playwright), baseline drift-over-time mode (--baseline), content-hash cache (--no-cache to bypass), evidence pre-check, versioned rubric, SARIF output, MCP server, BLOCK-level hooks, sub-agents, memory persistence, recursive self-audit, pytest suite"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"

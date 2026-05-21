@@ -10,7 +10,7 @@ from .synthesis import VerifierResult
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2}
 SARIF_LEVEL = {"P0": "error", "P1": "warning", "P2": "note"}
-BLACK_HERON_VERSION = "1.3.1"
+BLACK_HERON_VERSION = "1.3.2"
 
 
 def write_report(
@@ -302,6 +302,18 @@ def _write_report_md(
             for k, t in metrics["per_lens_seconds"].items():
                 lines.append(f"  - `{k}`: {t:.1f}s")
         lines.append(f"- **Rubric version:** `{metrics.get('rubric_version', '?')}` (source: `{metrics.get('rubric_source', '?')}`)")
+        cache_info = metrics.get("cache") or {}
+        if cache_info:
+            if cache_info.get("enabled"):
+                lines.append(
+                    f"- **Cache:** {cache_info.get('hits', 0)} hit / "
+                    f"{cache_info.get('misses', 0)} miss "
+                    f"(dir: `{cache_info.get('cache_dir', '?')}`)"
+                )
+            else:
+                lines.append(
+                    f"- **Cache:** disabled this run ({cache_info.get('bypassed', 0)} lens calls bypassed)"
+                )
         lines.append("")
         enrichment_reports = metrics.get("enrichment") or []
         if enrichment_reports:

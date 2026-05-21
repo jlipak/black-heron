@@ -2,6 +2,46 @@
 
 All notable changes to Black Heron. SemVer.
 
+## [1.3.2] — 2026-05-21
+
+The "content-hash cache" release. Phase S: re-running Black Heron on an unchanged repo (or one where only a non-load-bearing file changed) skips the Anthropic API entirely for any lens whose `(ctx, lens, model, rubric_version)` quadruple matches a prior run. Backward-compatible; cache is enabled by default. `--no-cache` reverts to v1.3.1 behavior (every lens calls the API).
+
+### Added — Deterministic content-hash cache
+- `src/black_heron/cache.py`:
+  - `compute_ctx_hash(ctx)` — SHA256 over Pydantic-canonical `RepoContext` dump. Captures file listing + sample file contents + entry-point contents + git log + todo count + external enrichments.
+  - `compute_cache_key(ctx_hash, lens_name, lens_model, rubric_version, prior_findings_hash="")` — full per-(lens, run-config) key. `prior_findings_hash` is used for `blind_spot` because that lens consumes the first-pass output.
+  - `compute_findings_hash(findings)` — order-independent hash of a finding set (sorted by `(lens, file, lines, severity, claim[:80])`), used as the blind-spot prior hash so concurrent first-pass ordering doesn't invalidate the cache.
+  - `read_cache(...)` / `write_cache(...)` — atomic on disk via `.tmp` + `os.replace`. Corruption is logged and treated as a miss (Law IV: partial degradation over crash).
+  - `run_lens_with_cache(...)` — wrapper used at each lens call site. Closure indirection (`lens_call: Callable[[], list]`) accommodates the heterogeneous lens signatures (blind_spot vs first-pass) without refactoring lens modules (Law III: never rewrite).
+  - `purge_cache(cache_dir)` — explicit wipe, exposed for ops who suspect drift outside the version-bump path.
+- Cache format carries a `format_version` ("1"); any schema change forces bypass via key mismatch — never silent invalidation.
+- Sharded layout: `~/.black-heron/cache/<key[:2]>/<key[2:18]>/<lens_name>.json`.
+
+### Added — CLI flags
+- `--no-cache` — bypass cache entirely. Counters track `bypassed` so the report still reflects what happened.
+- `--cache-dir <path>` — override default `~/.black-heron/cache/`.
+- Default behavior: cache enabled. The audit header prints the resolved cache dir + first 12 chars of `ctx_hash` so cross-run continuity is visible.
+
+### Added — REPORT.md + findings.json surface
+- `metrics.cache = {enabled, hits, misses, bypassed, cache_dir}` in `findings.json`.
+- REPORT.md "Metrics" gains one line: `- **Cache:** N hit / M miss (dir: ...)` (or "disabled this run" when `--no-cache`).
+
+### Discipline
+- Cache is **observable**, deterministic (Law VII). No LLM judges anything.
+- Cache key embeds rubric version + lens model id, so any meaningful upstream change forces a fresh API call (Law V — never claim cached when the source moved).
+- Disk write failures don't abort the audit; the in-memory result is still surfaced (Law IV).
+- Concurrent first-pass lens cache writes are safe — separate files per `(key, lens)` and atomic rename.
+- Honest gap: cache covers the CLI path only. `mcp_server.py` lens calls still hit the API every time (v1.3.3 candidate). Documented in `KNOWN_LIMITATIONS.md` (FM9).
+
+### Tests (81 → 103)
+- `tests/test_cache.py` (22): ctx-hash stability + sensitivity (sample content, entry-point content, todo count), cache-key separation by (lens, model, rubric version, prior findings), findings-hash order-independence, round-trip persistence, miss/hit/bypass counters via closure-call assertion, format-version mismatch as miss, corrupt JSON as miss, write-failure-tolerated path, purge.
+
+### Files touched
+- New: `src/black_heron/cache.py`, `tests/test_cache.py`.
+- Patched: `cli.py` (+ 2 flags, + cache init, + wrap 3 lens call sites), `report.py` (+ 1 metrics line, version bump), `pyproject.toml` (version bump + description).
+
+---
+
 ## [1.3.1] — 2026-05-21
 
 The "baseline drift" release. Phase R: Black Heron now answers "what changed since the last audit?" deterministically (no LLM). Run an audit, save findings.json, fix some issues, run again with `--baseline previous.json` — REPORT.md gains a "Drift since baseline" section with new / closed / persisting / drifted buckets. Backward-compatible; no flag = identical behavior to v1.3.0.

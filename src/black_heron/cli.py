@@ -16,17 +16,35 @@ from rich.console import Console
 from rich.panel import Panel
 
 from ._models import Rubric
+from .cache import (
+    DEFAULT_CACHE_DIR,
+    CacheStats,
+    compute_ctx_hash,
+    compute_findings_hash,
+    run_lens_with_cache,
+)
 from .code_writer import suggest_patches
 from .cost_tracker import CostTracker
 from .discovery import build_context
 from .drift import compute_drift_from_file
 from .enrichment import enrich_context, parse_enrich_flag
 from .lenses import ALL_LENSES, run_blind_spot
+from .lenses.blind_spot import MODEL as BLIND_SPOT_MODEL
+from .lenses.code_quality import MODEL as CODE_QUALITY_MODEL
+from .lenses.drift import MODEL as DRIFT_MODEL
+from .lenses.governance import MODEL as GOVERNANCE_MODEL
 from .mcp_consumers import ALL_ENRICHERS, load_mcp_config
 from .report import write_report
 from .rubric import load_rubric
 from .session import SessionRecord, session_id_now, utcnow_iso, write_session
 from .synthesis import synthesize
+
+LENS_MODELS = {
+    "code_quality": CODE_QUALITY_MODEL,
+    "governance": GOVERNANCE_MODEL,
+    "drift": DRIFT_MODEL,
+    "blind_spot": BLIND_SPOT_MODEL,
+}
 
 console = Console()
 
@@ -96,6 +114,20 @@ console = Console()
     help="Path to a prior findings.json to compute drift against. "
          "Missing or malformed baseline is logged + skipped (audit still runs).",
 )
+@click.option(
+    "--no-cache",
+    is_flag=True,
+    default=False,
+    help="Bypass content-hash cache. Forces every lens to call the Anthropic API. "
+         "Use when a lens prompt was edited outside the version-bump path.",
+)
+@click.option(
+    "--cache-dir",
+    "cache_dir_path",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=None,
+    help="Override default cache directory (~/.black-heron/cache/).",
+)
 def audit(
     repo_path: Path,
     lens_arg: str,
@@ -110,6 +142,8 @@ def audit(
     enrich_arg: str,
     mcp_config_path: Path | None,
     baseline_path: Path | None,
+    no_cache: bool,
+    cache_dir_path: Path | None,
 ) -> None:
     """Run a Black Heron audit on REPO_PATH and write reports to --out."""
     if env_path is not None:
@@ -200,6 +234,17 @@ def audit(
 
     client = anthropic.Anthropic()
 
+    # Content-hash cache: skip Anthropic call when (ctx, lens, model, rubric_version) unchanged
+    cache_dir = cache_dir_path if cache_dir_path is not None else DEFAULT_CACHE_DIR
+    cache_stats = CacheStats(cache_dir=str(cache_dir), enabled=not no_cache)
+    ctx_hash = compute_ctx_hash(ctx)
+    if not no_cache:
+        console.print(
+            f"[dim]Cache:[/dim] {cache_dir} (ctx hash [magenta]{ctx_hash[:12]}[/magenta])"
+        )
+    else:
+        console.print("[dim]Cache: disabled via --no-cache (every lens hits the API)[/dim]")
+
     all_findings = []
     raw_counts: dict[str, int] = {}
     lens_timings: dict[str, float] = {}
@@ -216,7 +261,17 @@ def audit(
         pass_t0 = time.time()
         with ThreadPoolExecutor(max_workers=len(first_pass)) as pool:
             future_to_name = {
-                pool.submit(ALL_LENSES[name], ctx, client, tracker): name
+                pool.submit(
+                    run_lens_with_cache,
+                    lens_name=name,
+                    lens_model=LENS_MODELS[name],
+                    ctx_hash=ctx_hash,
+                    rubric_version=rubric.rubric_version,
+                    cache_dir=cache_dir,
+                    cache_stats=cache_stats,
+                    enabled=not no_cache,
+                    lens_call=(lambda n=name: ALL_LENSES[n](ctx, client, tracker)),
+                ): name
                 for name in first_pass
             }
             for fut in as_completed(future_to_name):
@@ -244,7 +299,16 @@ def audit(
                 sys.exit(5)
             t0 = time.time()
             with console.status(f"[bold]{name}[/bold] lens running..."):
-                findings = ALL_LENSES[name](ctx, client, tracker)
+                findings = run_lens_with_cache(
+                    lens_name=name,
+                    lens_model=LENS_MODELS[name],
+                    ctx_hash=ctx_hash,
+                    rubric_version=rubric.rubric_version,
+                    cache_dir=cache_dir,
+                    cache_stats=cache_stats,
+                    enabled=not no_cache,
+                    lens_call=lambda n=name: ALL_LENSES[n](ctx, client, tracker),
+                )
             lens_timings[name] = time.time() - t0
             raw_counts[name] = len(findings)
             all_findings.extend(findings)
@@ -258,8 +322,19 @@ def audit(
             console.print("[yellow]Skipping blind_spot lens — cost or time cap reached.[/yellow]")
         else:
             t0 = time.time()
+            prior_hash = compute_findings_hash(all_findings)
             with console.status("[bold]blind_spot[/bold] lens running (reads other lenses' output)..."):
-                findings = run_blind_spot(ctx, all_findings, client, tracker)
+                findings = run_lens_with_cache(
+                    lens_name="blind_spot",
+                    lens_model=LENS_MODELS["blind_spot"],
+                    ctx_hash=ctx_hash,
+                    rubric_version=rubric.rubric_version,
+                    prior_findings_hash=prior_hash,
+                    cache_dir=cache_dir,
+                    cache_stats=cache_stats,
+                    enabled=not no_cache,
+                    lens_call=lambda: run_blind_spot(ctx, all_findings, client, tracker),
+                )
             lens_timings["blind_spot"] = time.time() - t0
             raw_counts["blind_spot"] = len(findings)
             all_findings.extend(findings)
@@ -320,6 +395,7 @@ def audit(
         "mode": mode,
         "suggested_patches_count": len(suggested_patches),
         "enrichment": [r.as_metric() for r in enrichment_reports],
+        "cache": cache_stats.to_dict(),
     }
     write_report(
         out_dir,

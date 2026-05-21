@@ -1,7 +1,7 @@
 # Black Heron
 
 > Multi-lens, governance-first repository audit agent with an adversarial verifier.
-> **v1.3.1** — 4 lenses + adversarial Opus verifier, evidence-presence pre-check, versioned rubric, SARIF output, parallel lens execution, code-writing suggest mode, external MCP enrichment (context7 / sequential-thinking / firecrawl / playwright), and **deterministic baseline drift** (`--baseline previous.json`).
+> **v1.3.2** — 4 lenses + adversarial Opus verifier, evidence-presence pre-check, versioned rubric, SARIF output, parallel lens execution, code-writing suggest mode, external MCP enrichment (context7 / sequential-thinking / firecrawl / playwright), **deterministic baseline drift** (`--baseline previous.json`), and **content-hash cache** (skip API calls on unchanged repo; `--no-cache` to bypass).
 
 ```
        ___
