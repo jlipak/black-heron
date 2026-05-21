@@ -61,10 +61,10 @@ Phase R — Black Heron now answers "what changed since the last audit?" determi
 
 ## Session totals (both phases this session)
 - 2 phases shipped: G (1.2.0 → 1.3.0) and R (1.3.0 → 1.3.1)
-- 3 commits: `96992f5`, `e3d9873`, `52705e3` (Phase G + wrap), `52705e3` (Phase R). Plus this digest = one more wrap commit incoming.
+- 4 commits this session: `96992f5` (Phase G code) + `e3d9873` (Phase G wrap) + `52705e3` (Phase R code) + `bd03f22` (Phase R wrap, this digest's first revision)
 - Test count: 35 → 81 (+46 across both phases)
 - 4 new source modules: `enrichment.py`, `drift.py`, `mcp_consumers/` package (8 files)
-- 4 new test files
+- 4 new test files: `test_enrichment.py`, `test_mcp_client.py`, `test_mcp_consumers.py`, `test_drift.py`
 
 ## Resume next session
 **`cook v1.3 phase S`** — content-hash caching across audits. When the same repo is audited twice without code changes, the second run should hit a content cache and return the prior findings.json at near-zero cost. Phase S touches discovery (hash inputs), CLI (`--cache <dir>` flag, default `~/.black-heron/cache/`), and synthesis (skip verifier if all inputs match). Free win for re-runs on unchanged repos.
