@@ -1,70 +1,71 @@
-# Session Digest — 2026-05-21 (Phase R shipped — second phase this session)
+# Session Digest — 2026-05-21 (Phase S shipped — third phase this session)
 
 ## Quick State
 - Project: black-heron
 - Directory: /c/Users/DOBY/Desktop/black-heron
 - Branch: master
-- Last commit: `52705e3` v1.3.1 Phase R: baseline drift mode (--baseline findings.json)
-- Prior commit this session: `e3d9873` wrap of Phase G, before that `96992f5` v1.3.0 Phase G
-- Uncommitted: just this digest
-- Version: **v1.3.1** (was v1.3.0 mid-session, v1.2.0 at session start)
-- Tests: **81 passing** (was 57 post-Phase-G, 35 at session start)
+- Last commit: `3b0ccc5` v1.3.2 Phase S: content-hash cache for lens outputs (--no-cache to bypass)
+- Prior commits this session: `a1453d5` (Law XV fix) + `bd03f22` (Phase R wrap) + `52705e3` (Phase R code) + `e3d9873` (Phase G wrap) + `96992f5` (Phase G code)
+- Uncommitted: just this digest + MEMORY.md NEXT pointer update
+- Version: **v1.3.2** (was v1.3.1 mid-session, v1.3.0 earlier, v1.2.0 at session start)
+- Tests: **103 passing** (was 81 post-Phase-R, 57 post-Phase-G, 35 at session start)
 
-## What shipped this turn (Phase R)
+## What shipped this turn (Phase S)
 
-Phase R — Black Heron now answers "what changed since the last audit?" deterministically. `--baseline previous.json` flag → set-difference categorization into new/closed/persisting/drifted. NO LLM call (Law VII observable, not theoretical).
+Re-running BH on an unchanged repo skips the Anthropic API entirely for any lens whose `(ctx, lens, model, rubric_version)` quadruple matches a prior cached entry. Backward-compatible; cache is enabled by default. `--no-cache` reverts to v1.3.1 behavior.
 
 ### Code (2 new files, 4 modified)
-- `src/black_heron/drift.py` (~220 lines) — `compute_identity_hash(finding)`, `categorize(current, baseline) -> DriftReport`, defensive `load_baseline_findings`, top-level `compute_drift_from_file`.
-- Identity = `sha256(lens | normalized_lines | first_8_words(claim) | file)`. Line normalization collapses `L42-L88` and `42` to the same key. 8-word claim prefix is robust to LLM rephrasing.
-- Drift triggers: severity change, `|Δconf| > 0.2`, evidence non-substring.
-- `cli.py` — `--baseline <path>` option (no `exists=True` so loader prints a friendly skip message rather than click's generic error). Panel header includes `Baseline:` line. Console summary post-verifier prints bucket counts or skip reason.
-- `report.py` — `write_report()` gained `baseline_diff` kwarg (default safe). `_render_drift_section()` runs right after Summary: bucket table + per-bucket subsections + compliance-debt callout for persisting P0/P1 + Apollo-reverse note on Closed + LLM-noise note on Drifted. `findings.json` gains `baseline_diff` top-level field; SARIF intentionally unchanged.
-- `mcp_server.py` — version bump only (write_report call still backward-compatible without baseline_diff kwarg).
+- `src/black_heron/cache.py` (~250 lines):
+  - `compute_ctx_hash(ctx)` — SHA256 over canonical `RepoContext.model_dump(mode="json")` with `sort_keys=True`. Captures file listing + sample contents + entry-points + git log + todo count + external enrichments.
+  - `compute_findings_hash(findings)` — order-insensitive hash over `(lens, file, lines, severity, claim[:80])` tuples sorted lexicographically. Used as `blind_spot` prior-hash so first-pass concurrency ordering doesn't invalidate.
+  - `compute_cache_key(ctx_hash, lens_name, lens_model, rubric_version, prior_findings_hash="")` — full per-(lens, run-config) key including a `CACHE_FORMAT_VERSION` byte.
+  - `read_cache` / `write_cache` — sharded layout `<dir>/<key[:2]>/<key[2:18]>/<lens>.json`, atomic via `.tmp` + `os.replace`. Corruption -> stderr note + miss (Law IV).
+  - `run_lens_with_cache(*, ..., lens_call: Callable[[], list])` — closure indirection lets one wrapper handle heterogeneous lens signatures (3-arg first-pass vs 4-arg blind_spot) without refactoring lens modules (Law III).
+  - `purge_cache(dir)` — explicit wipe entry point for ops outside the rubric-bump path.
+- `cli.py` — `--no-cache` + `--cache-dir` flags. Wrapped all 3 lens call sites (parallel `ThreadPoolExecutor.submit`, sequential fallback loop, blind_spot post-pass) via `run_lens_with_cache`. `ctx_hash` computed once per run; printed (first 12 chars) in the audit header so cross-run continuity is visible.
+- `report.py` — `BLACK_HERON_VERSION = "1.3.2"`. New line in Metrics: `**Cache:** N hit / M miss (dir: ...)` or `disabled this run` when bypassed.
+- `pyproject.toml` — version + description bump.
 
-### Tests (1 new file, 24 new tests, 57 → 81)
-- `tests/test_drift.py`:
-  - 6 identity tests (line-format variants, punctuation+case invariance, robust to claim rephrasing past first 8 words, file/lens/claim-prefix sensitivity, missing-field deterministic hash)
-  - 10 categorize tests (empty baseline, identical, closed, severity-drift, confidence-jump, tiny-confidence persist, evidence change, evidence superstring persist, identity_hash propagation, all 4 buckets exercised)
-  - 7 defensive-loader tests (missing path, None path, malformed JSON, unrecognized shape, full findings.json shape, bare list, generic `{"findings": []}` shape)
-  - 1 payload-shape test (counts + all 4 buckets)
+### Tests (1 new file, 22 new tests, 81 -> 103)
+- `tests/test_cache.py`:
+  - 4 ctx-hash tests (stability, sample-content sensitivity, entry-point sensitivity, todo-count sensitivity)
+  - 4 cache-key tests (lens_name, model, rubric_version, prior_findings_hash all change the key)
+  - 3 findings-hash tests (order-independence, sensitivity to new finding, empty-list determinism)
+  - 5 read/write tests (round-trip, miss-returns-None, corrupted JSON -> None, format-version mismatch -> None, malformed findings field -> None)
+  - 1 deserialize test (invalid finding skipped without crash)
+  - 3 wrapper-behavior tests (miss-then-hit closure-call count, bypass when disabled, write-failure-tolerated)
+  - 2 purge tests (removes files, no-op on missing dir)
 
-### Docs (4 files updated, 1 cumulative)
-- `CHANGELOG.md` — full v1.3.1 entry (~75 lines). v1.3.0 retained.
-- `README.md` — v1.3 → v1.3.1 banner; new "Audit-over-time with `--baseline`" usage block.
-- `OPERATIONS.md` — v1.3 → v1.3.1; per-bucket governance table + identity hash formula + drift triggers.
-- `KNOWN_LIMITATIONS.md` — FM7 (start-line-only identity tolerant of line drift) + FM8 (closed not auto-correlated with git log) with v1.4 candidate solutions.
-- `MEMORY.md` — NEXT updated: Phase R marked done; resume command is `cook v1.3 phase S`.
+### Docs (5 files updated)
+- `CHANGELOG.md` — full v1.3.2 entry (~50 lines). v1.3.1 retained above.
+- `README.md` — v1.3.1 -> v1.3.2 banner with cache mention.
+- `OPERATIONS.md` — new "Content-hash cache" section between Phase R and Phase G blocks: usage examples (first run, hit, --no-cache, --cache-dir), key composition formula, miss-cause table, what-it-doesn't-detect notes (FM9, FM10).
+- `KNOWN_LIMITATIONS.md` — FM9 (cache covers CLI only, MCP server uncached) + FM10 (cache key doesn't hash lens prompt modules) with v1.3.3/v1.4 candidate solutions.
+- `MEMORY.md` — NEXT updated: Phase S marked done; resume command is `cook v1.3 phase O`.
 
 ## Verified this turn
-- `py -m pytest -q` → **81 passed in 0.51s** (24 new drift tests, 57 prior all still green)
-- Synthetic E2E smoke: T0 baseline (3 findings) + T1 current (2 of those + 1 new + 1 with severity change) → drift counts `{new: 1, closed: 1, persisting: 1, drifted: 1}` ✓
-- `findings.json.baseline_diff` carries full payload incl. `identity_hash` on every finding, `drift_reasons: ['severity:P2->P1']` on the drifted bucket
-- `REPORT.md` renders the drift section under Summary with bucket table + Compliance debt signal callout (fires when persisting P0/P1 ≥ 1) + Apollo-reverse note on Closed + LLM-noise note on Drifted
-- `black-heron . --dry-run --baseline /tmp/nonexistent.json` → panel header shows `Baseline: ...` correctly; dry-run exits before drift compute (intentional — no current findings to compare)
-- `py -m pip show black-heron` → Version: 1.3.1
-- No Anthropic API calls made in this turn (Phase R is pure-deterministic per spec)
+- `py -m pytest -q` -> **103 passed in 0.62s** (22 new cache tests, 81 prior all still green)
+- `black-heron --help` shows both `--no-cache` and `--cache-dir DIRECTORY` flags with their help text
+- `black-heron . --dry-run` runs cleanly (entry-points loaded, dry-run prompt written)
+- `py -m pip show black-heron` -> Version: 1.3.2
+- Cache miss-then-hit semantics covered by `test_run_lens_with_cache_miss_then_hit` (closure call count assertion: 1 after miss, still 1 after hit)
+- Bypass semantics covered by `test_run_lens_with_cache_bypass_when_disabled` (3 calls -> 3 lens invocations, 3 bypassed counter, 0 hits, 0 misses)
+- Write-failure tolerance covered by `test_run_lens_with_cache_write_failure_does_not_abort` (mocked OSError; in-memory result still returned)
+- No Anthropic API calls made in this turn (Phase S is pure-deterministic per spec)
 
 ## Architecture nuances worth carrying forward
-- Drift identity is **start-line only** on purpose. Adding an import shifts every subsequent finding's line number; a strict-line identity would mark nearly every persisting finding as `closed` + `new` every audit. Trade-off documented in KNOWN_LIMITATIONS FM7. `--strict-line-identity` is a v1.4 candidate.
-- The 8-word claim prefix is the critical knob for LLM-rephrasing robustness. If the verifier or lens systematically rewrites claims in ways that change words 1–8, the heuristic breaks. v1.4 candidate: normalize claim via stopword-strip + Porter stem before windowing.
-- Evidence substring rule is one-directional inclusion (a ⊆ b OR b ⊆ a → same). This is intentional: LLMs broaden/narrow evidence quotes constantly; treating that as drift would mislabel persistent issues as drifted.
-- `compute_drift_from_file` is the single public entry point — caller passes `(current_findings, baseline_path | None)` and gets a `DriftReport` that knows how to skip gracefully. CLI doesn't need to wrap try/except around the drift call.
-- `write_report` signature change is purely additive (`baseline_diff` kwarg with safe default). `mcp_server.py` calls write_report without it; tests for mcp_server still pass.
+- Cache key is `sha256("1|ctx_hash|lens|model|rubric_version|prior_findings_hash")`. The `prior_findings_hash` slot is empty string for first-pass lenses (code_quality / governance / drift) and the sorted-tuple hash of all prior findings for `blind_spot`. This keeps the four lenses in independent cache namespaces while still letting the cache work cleanly across all of them.
+- Sharded directory layout (`<key[:2]>/<key[2:18]>/`) keeps directory listings manageable. The full 64-char key isn't used as a dir name because Windows path-length limits + git path-length limits get unhappy fast.
+- Closure indirection for `lens_call` is the elegant escape from the heterogeneous-lens-signature problem. The wrapper doesn't need to know how blind_spot differs from code_quality — caller bakes the args into a `lambda: ALL_LENSES[name](ctx, client, tracker)` and the wrapper just invokes when needed. ThreadPoolExecutor-safe because each future has its own closure (`lambda n=name: ...` captures `name` via default-arg).
+- `format_version="1"` lives in the on-disk payload AND is part of `compute_cache_key`. Belt-and-suspenders: on a schema bump, both the key changes (new payloads only) and the existing entries fail the format check on read (graceful miss).
+- Disk write failure path is deliberately non-fatal. If `~/.black-heron/` is on a read-only volume or the disk is full, the audit still completes and returns the live lens output to the user; the stderr note explains the silent cache miss without aborting useful work (Law IV).
+- The MCP server (`mcp_server.py`) was intentionally **not** wired into the cache this phase. The MCP path is typically one-shot from automation contexts; the iteration use case is the CLI. Lifting `run_lens_with_cache` to a shared module both `cli.py` and `mcp_server.py` import is a v1.3.3 candidate (documented FM9).
 
-## Honest gaps for v1.4
-- Identity hash uses start-line only; a finding that genuinely moved to a different code region in the same file is silently labeled `persisting`.
-- Closed findings aren't auto-correlated with `git log` between baseline timestamp and now. The report tells the reader to verify, but BH doesn't itself fetch the log diff. v1.4 candidate: auto-link closed findings to touching commits.
-- No multi-baseline mode (`--baseline N --baseline N-1`). Single comparison only.
-- Drift compute runs ONLY on the verifier's `verified` list. A finding that was rejected by the verifier in baseline and rejected again in current is invisible to drift (which is intentional — the audit's official output is `verified`), but it means churn in the rejected pool is also invisible. Add `--include-rejected-in-drift` for transparency? v1.4 candidate.
-- `_evidence_changed` strips whitespace then compares — leading-tab-vs-leading-spaces shifts will be treated as different evidence. Probably fine; flag if it shows up in real-repo testing.
-
-## Session totals (both phases this session)
-- 2 phases shipped: G (1.2.0 → 1.3.0) and R (1.3.0 → 1.3.1)
-- 4 commits this session: `96992f5` (Phase G code) + `e3d9873` (Phase G wrap) + `52705e3` (Phase R code) + `bd03f22` (Phase R wrap, this digest's first revision)
-- Test count: 35 → 81 (+46 across both phases)
-- 4 new source modules: `enrichment.py`, `drift.py`, `mcp_consumers/` package (8 files)
-- 4 new test files: `test_enrichment.py`, `test_mcp_client.py`, `test_mcp_consumers.py`, `test_drift.py`
+## Honest gaps for v1.3.3 / v1.4
+- **FM9** — MCP server lens calls are uncached. Trivial fix when we get to it (15 minutes).
+- **FM10** — Cache key doesn't hash lens prompt module bytes. By design (avoids dev-comment-change invalidation) but creates a quiet-stale-result vector for active lens-prompt development. `--no-cache` is the runtime escape; v1.4 candidate is to add a `--cache-bust-on-lens-edit` mode that hashes the lens .py file's content alongside `lens_model`.
+- Cache savings aren't reported in USD. The CacheStats payload only tracks counts (hits/misses/bypassed). Estimating savings requires either (a) per-lens cost tracking from previous runs (not currently persisted across audits) or (b) priced-token estimation from prompt size (uncertain). v1.4 candidate: persist a small `~/.black-heron/calibration.json` `per_lens_avg_cost_usd` map across runs and use it for honest USD-savings estimates (Law XV: only cite numbers we can verify this session).
+- Cache invalidation is **manual only**. No TTL. v1.4 candidate: optional `--cache-ttl <hours>` flag.
 
 ## Resume next session
-**`cook v1.3 phase S`** — content-hash caching across audits. When the same repo is audited twice without code changes, the second run should hit a content cache and return the prior findings.json at near-zero cost. Phase S touches discovery (hash inputs), CLI (`--cache <dir>` flag, default `~/.black-heron/cache/`), and synthesis (skip verifier if all inputs match). Free win for re-runs on unchanged repos.
+**`cook v1.3 phase O`** — GitHub Actions workflow example. Ship a `.github/workflows/black-heron.yml` template that runs the audit on PR + comments findings.json summary back as a PR comment (or uploads SARIF for Code Scanning ingest). Boot reads MEMORY.md NEXT first; this digest second.

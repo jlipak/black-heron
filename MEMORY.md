@@ -4,12 +4,12 @@
 
 ## NEXT (priority order)
 
-- [ ] **RESUME COMMAND for next session:** `cook v1.3 phase S` (content-hash caching across audits). Phase R shipped.
+- [ ] **RESUME COMMAND for next session:** `cook v1.3 phase O` (GitHub Actions workflow example). Phase S shipped.
+- [x] Phase S — content-hash cache across audits (`--no-cache` to bypass). Shipped 2026-05-21. 103 tests passing. SHA256 over RepoContext, sharded `~/.black-heron/cache/<key[:2]>/<key[2:18]>/<lens>.json`, atomic write, format_version=1. CLI only — MCP server uncached (FM9).
 - [x] Phase R — baseline drift-over-time mode (`--baseline previous.json`). Shipped 2026-05-21. 81 tests passing. Set arithmetic on identity hash — no LLM, deterministic.
 - [x] Phase G — BH consumes external MCPs (context7, sequential-thinking, firecrawl, playwright). Shipped 2026-05-21. 57 tests passing. Default `--enrich none` so v1.2 commands unchanged.
 - [ ] BH v1.3 sprint (active, continues):
-      - Phase S — content-hash caching across audits ← START HERE next session
-      - Phase O — GitHub Actions workflow example
+      - Phase O — GitHub Actions workflow example ← START HERE next session
       - Phase P — GitHub URL ingest (`black-heron https://github.com/...`)
       - Phase Q — HITL queue for ambiguous findings
 - [ ] QURE clean-staging push to `lipakjosip442-png/qure-compliance` PRIVATE — sutra ujutro pre-R3, separate session, separate repo.
