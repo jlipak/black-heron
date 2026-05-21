@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "bash scripts/hooks/block-git-push.sh"
+      },
+      {
+        "matcher": "Bash",
+        "command": "bash scripts/hooks/block-catastrophic.sh"
+      },
+      {
+        "matcher": "Write|Edit",
+        "command": "bash scripts/hooks/scan-secrets.sh"
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "command": "bash scripts/hooks/pre-compact-flush.sh"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "command": "bash scripts/hooks/uncommitted-warning.sh"
+      }
+    ]
+  }
+}

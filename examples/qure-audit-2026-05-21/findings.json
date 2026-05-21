@@ -1,0 +1,226 @@
+{
+  "schema_version": "0.1.0",
+  "generated_at_utc": "2026-05-21T15:17:16.605954+00:00",
+  "repo": {
+    "path": "C:\\Users\\DOBY\\Desktop\\qure-clean-staging",
+    "file_count": 116,
+    "primary_language": "TypeScript",
+    "todo_count": 0
+  },
+  "lens_raw_counts": {
+    "code_quality": 9,
+    "governance": 7,
+    "drift": 9
+  },
+  "verified_count": 15,
+  "rejected_count": 10,
+  "verified": [
+    {
+      "lens": "drift",
+      "severity": "P0",
+      "file": "NOTICE.md",
+      "lines": "L7",
+      "claim": "NOTICE.md states 'The full upstream MIT license text is preserved in `poc/qure_compliance/LICENSE`' but no `LICENSE` file appears anywhere under `poc/qure_compliance/` in the file listing.",
+      "evidence": "The full upstream MIT license text is preserved in `poc/qure_compliance/LICENSE`.",
+      "why_it_matters": "The attribution obligation from the upstream MIT-licensed code (claude-video-vision) cannot be verified or fulfilled if the LICENSE file does not exist, creating a compliance gap between the stated and actual state of the repository.",
+      "confidence": 0.97,
+      "verifier_note": "Legal/attribution gap with explicit textual claim vs. absent file \u2014 high-impact and easy for a reviewer to verify."
+    },
+    {
+      "lens": "drift",
+      "severity": "P0",
+      "file": "poc/qure_compliance/scripts/smoke-mcp.ts",
+      "lines": "L21-L23",
+      "claim": "The smoke test asserts three registered MCP tools \u2014 `compliance_scan`, `video_info`, and `video_setup` \u2014 but only `compliance_scan` has a corresponding source file in the repository; `src/tools/video_info.ts` and `src/tools/video_setup.ts` are absent from the file listing.",
+      "evidence": "const expected = [\"compliance_scan\", \"video_info\", \"video_setup\"];\nconst missing = expected.filter((e) => !toolNames.includes(e));",
+      "why_it_matters": "The smoke test will exit 1 on every run because two of the three tools it expects cannot exist without their source files, meaning `npm run smoke` is broken and the claimed tool surface area is fiction.",
+      "confidence": 0.9,
+      "verifier_note": "Tools may be registered inline in a server file rather than as separate source files, but the absence of the files combined with the hard assertion is concrete enough to flag \u2014 reviewer should confirm registration site."
+    },
+    {
+      "lens": "drift",
+      "severity": "P1",
+      "file": "evals/golden/v1.1.0/_extract_transcripts.py",
+      "lines": "L10",
+      "claim": "The transcript extraction script references `evals/golden/v1.1.0/videos/` as its video source directory, but no `videos/` subdirectory exists under `evals/golden/v1.1.0/` in the file listing.",
+      "evidence": "VIDEOS_DIR = \"evals/golden/v1.1.0/videos\"",
+      "why_it_matters": "The script will silently skip all 10 videos with 'video not found' messages and produce no transcripts, making the golden-set preparation workflow non-functional without any obvious error to a new contributor.",
+      "confidence": 0.9,
+      "verifier_note": "Concrete missing-directory claim that breaks the documented golden-set workflow; videos directories are often gitignored but the script's silent-skip behavior is the real defect."
+    },
+    {
+      "lens": "drift",
+      "severity": "P1",
+      "file": "poc/qure_compliance/evals/README.md",
+      "lines": "L17-L24",
+      "claim": "The eval README documents that `runner.ts` reads video files from `../../../evals/golden/v1.0.0/videos/*.mp4`, but no `videos/` subdirectory exists under `evals/golden/v1.0.0/` or `evals/golden/v1.1.0/` in the file listing.",
+      "evidence": "| `../../../evals/golden/v1.0.0/videos/*.mp4` | the actual videos (downloaded by `scripts/download-golden-set.ts`) |",
+      "why_it_matters": "Anyone following the documented eval workflow will encounter a missing-file error immediately; the golden set videos are either never downloaded or the download script's output path diverged from what the runner expects.",
+      "confidence": 0.85,
+      "verifier_note": "Video binaries are typically gitignored, so absence is expected, but the README should explicitly say so \u2014 keep as a documentation/UX defect rather than a true correctness bug."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P1",
+      "file": "evals/golden/v1.1.0/_extract_transcripts.py",
+      "lines": "L18-L19",
+      "claim": "EXISTING_G001 is a hardcoded absolute-style relative path pointing to a specific dated audit output directory that is unlikely to exist in other developer environments or CI.",
+      "evidence": "EXISTING_G001 = \"poc/qure_compliance/audit_output/qure-2026-05-20-065/transcript.json\"",
+      "why_it_matters": "The path encodes a specific run timestamp; on any other machine or after audit output is cleaned, os.path.exists returns False and the script prints 'video not found' for g001, producing a silently incomplete golden set that skews eval metrics.",
+      "confidence": 0.92,
+      "verifier_note": "Hardcoded timestamped path is a clear reproducibility defect for the golden-set build pipeline."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P1",
+      "file": "poc/qure_compliance/src/extractors/source.ts",
+      "lines": "L95-L99",
+      "claim": "The fallback branch silently returns a video-only (no audio) file when yt-dlp produces per-stream fragments but no merged output, without throwing or logging a warning that audio-dependent criteria (C6, C7) will silently fail.",
+      "evidence": "// Fallback: any .mp4 (even per-stream video-only \u2014 audio will be missing)\nconst pick = files.find((f) => /\\.mp4$/i.test(f)) ?? files[0];\nreturn { localPath: join(workDir, pick), originalSource: url };",
+      "why_it_matters": "Downstream transcript-based rubric criteria (C6, C7) are hard_fail criteria; silently processing a muted file will produce systematically wrong verdicts without any indication of the root cause.",
+      "confidence": 0.85,
+      "verifier_note": "The inline comment itself acknowledges the silent failure mode \u2014 downgraded from P0 to P1 because impact depends on rare yt-dlp output state and the comment shows the author is aware."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P1",
+      "file": "poc/qure_compliance/src/config.ts",
+      "lines": "L43-L48",
+      "claim": "requireAnthropicKey's placeholder guard `k.startsWith(\"sk-ant-...\")` only catches the literal placeholder substring, providing no structural validation beyond a 10-char length check; misconfigured keys can pass.",
+      "evidence": "if (!k || k.startsWith(\"sk-ant-...\") || k.length < 10) {",
+      "why_it_matters": "The guard gives false confidence that a real key is present; a fabricated 10-char string passes startup validation and is forwarded to the live API, obscuring configuration errors at runtime.",
+      "confidence": 0.8,
+      "verifier_note": "Real defect but P0 overstates it \u2014 invalid keys still fail at the API call boundary; downgrading and consolidating with the duplicate Finding 15."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P1",
+      "file": "poc/qure_compliance/src/audit/serializer.ts",
+      "lines": "L130-L135",
+      "claim": "writeAuditJson performs an atomic write via temp+rename but does not clean up the .tmp file on failure, leaving orphaned temporary files.",
+      "evidence": "const tempPath = `${finalPath}.tmp`;\nconst json = JSON.stringify(audit, null, 2);\nawait writeFile(tempPath, json, \"utf-8\");\nawait rename(tempPath, finalPath);",
+      "why_it_matters": "If writeFile succeeds but rename fails, the .tmp file persists and may be mistaken for a valid audit file by directory-listing logic in nextAuditId.",
+      "confidence": 0.8,
+      "verifier_note": "Real robustness gap in atomic-write pattern; the directory-listing collision risk only materializes if readdir doesn't filter by suffix, which reviewer can verify."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P1",
+      "file": "poc/qure_compliance/src/config.ts",
+      "lines": "L36-L38",
+      "claim": "The vision_model default is hardcoded to 'claude-sonnet-4-6', which does not correspond to any publicly documented Anthropic model identifier.",
+      "evidence": "vision_model: env.QURE_VISION_MODEL ?? \"claude-sonnet-4-6\",",
+      "why_it_matters": "A wrong default model ID causes every production scan that doesn't override QURE_VISION_MODEL to fail or be routed to an unintended model, with no startup validation.",
+      "confidence": 0.7,
+      "verifier_note": "Model ID looks malformed (Anthropic uses formats like `claude-sonnet-4-5-20250929`); worth surfacing for the reviewer to confirm."
+    },
+    {
+      "lens": "governance",
+      "severity": "P2",
+      "file": "poc/qure_compliance/src/audit/serializer.ts",
+      "lines": "L51-L75",
+      "claim": "The audit record persists `models_used` with optional `snapshot` field but does not capture the raw prompt text sent to the model.",
+      "evidence": "models_used: input.modelsUsed, ... typed as `Array<{ role: string; model_id: string; snapshot?: string }>` \u2014 no prompt or raw-response field is present in `SerializeInput`.",
+      "why_it_matters": "Without persisting the exact prompt, a future auditor cannot verify the model was queried under the rubric version active at the time, nor reproduce the inference.",
+      "confidence": 0.75,
+      "verifier_note": "Valid governance/reproducibility concern for an audit-trail system; severity appropriately P2 since prompts can be reconstructed from code+rubric version."
+    },
+    {
+      "lens": "governance",
+      "severity": "P2",
+      "file": "poc/qure_compliance/src/config.ts",
+      "lines": "L37-L39",
+      "claim": "The thresholds `max_frames: 120` and `target_fps: 0.5` are hardcoded defaults with no inline citation to the rubric file, spec document, or evaluation result that justifies those values.",
+      "evidence": "max_frames: Number(env.QURE_MAX_FRAMES ?? \"120\"), target_fps: Number(env.QURE_TARGET_FPS ?? \"0.5\"),",
+      "why_it_matters": "Threshold defaults without cited rationale cannot be defended to a regulator; overrides via env vars also lack range validation.",
+      "confidence": 0.8,
+      "verifier_note": "Reasonable governance flag for a compliance-audit tool where defensibility of magic numbers matters."
+    },
+    {
+      "lens": "governance",
+      "severity": "P2",
+      "file": "poc/qure_compliance/src/config.ts",
+      "lines": "L1-L60",
+      "claim": "No `.env.example` file appears in the 116-file listing, even though `config.ts` references at least six environment variables that operators must supply.",
+      "evidence": "config.ts L44: ANTHROPIC_API_KEY ... L50: OPENAI_API_KEY ... no `.env.example` file appears in the repository listing.",
+      "why_it_matters": "Without a `.env.example`, a new operator cannot determine the full set of required secrets without reading source code, increasing misconfiguration risk.",
+      "confidence": 0.85,
+      "verifier_note": "Standard onboarding/operability gap; P2 is appropriate."
+    },
+    {
+      "lens": "drift",
+      "severity": "P2",
+      "file": "poc/qure_compliance/scripts/whisper-local.py",
+      "lines": "L6",
+      "claim": "The module docstring references 'poc/base/mcp-server/src/backends/local.ts' but no `poc/base/` directory exists in the repository.",
+      "evidence": "Pattern adapted from poc/base/mcp-server/src/backends/local.ts (MIT, Jordan Vasconcelos).",
+      "why_it_matters": "The referenced upstream file path is a stale attribution that cannot be verified within the repository.",
+      "confidence": 0.7,
+      "verifier_note": "Provenance comment likely references a sibling repo not in this checkout; minor but worth fixing for attribution clarity."
+    },
+    {
+      "lens": "drift",
+      "severity": "P2",
+      "file": "poc/qure_compliance/package.json",
+      "lines": "L3",
+      "claim": "`package.json` declares version `0.1.0` while `dashboard/index.html` displays `v1.1.0` and eval golden sets are `v1.0.0`/`v1.1.0`, creating an inconsistent version narrative.",
+      "evidence": "package.json: \"version\": \"0.1.0\" / dashboard/index.html: \"v1.1.0 short-form golden set \u00b7 10 videos\"",
+      "why_it_matters": "A reader cannot determine whether `0.1.0` pre-dates `v1.0.0` eval or is a separate versioning axis, creating confusion about which software version produced published eval results.",
+      "confidence": 0.7,
+      "verifier_note": "Software version vs. rubric/eval version are legitimately separate axes, but the docs don't say so \u2014 minor clarity gap."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P2",
+      "file": "poc/qure_compliance/tsconfig.json",
+      "lines": "L8",
+      "claim": "rootDir is './src' but tests/ and evals/ are excluded from compilation, so type errors in test utilities are not surfaced by tsc.",
+      "evidence": "\"rootDir\": \"./src\", ... \"exclude\": [\"node_modules\", \"dist\", \"tests\"]",
+      "why_it_matters": "Test files import from src under strict mode assumptions but are never type-checked by tsc; type regressions go undetected until vitest runtime.",
+      "confidence": 0.7,
+      "verifier_note": "Common TS project pattern; vitest does type-check via tsx, so impact is modest but the gap is real."
+    }
+  ],
+  "rejected": [
+    {
+      "claim": "nextAuditId catches readdir errors and silently swallows them with a comment 'dir didn't exist', but mkdir with recursive:true on line L105 already creates the directory, so the catch block is dead code that also hides real I/O errors.",
+      "reason": "The catch is defensive against TOCTOU and non-ENOENT errors (e.g., EACCES post-mkdir); calling it 'dead code' is incorrect, and the duplicate-ID risk is speculative \u2014 reviewer noise outweighs signal."
+    },
+    {
+      "claim": "scripts/scan-secrets.sh exits 0 silently when both stdin and TOOL_INPUT are empty, providing no defence when invoked outside the expected hook context.",
+      "reason": "Exit 0 on empty input is correct hook behavior \u2014 there is nothing to scan; flagging this as a security gap misreads the script's contract."
+    },
+    {
+      "claim": "ModelCall and Trace are imported from types.ts but ModelCall is never referenced in this file's code.",
+      "reason": "Unused-import nitpick; TS compiler/linter handles this and it does not warrant audit-report space."
+    },
+    {
+      "claim": "The rubric file name encodes 'v1' but the file itself was not sampled, so it is unconfirmed whether a machine-readable `version` field exists inside the JSON.",
+      "reason": "Speculative finding admitting the evidence was not examined; the cited loader test (`expect(r.version).toBe(\"1.0.0\")`) actually confirms the field exists and is read."
+    },
+    {
+      "claim": "The compliance rubric documentation file was not sampled; it cannot be confirmed whether it carries a `version` field or change-log.",
+      "reason": "Pure speculation based on not having read the file \u2014 not a defensible audit finding."
+    },
+    {
+      "claim": "Duplicate of placeholder-key guard finding (governance P2 version covering config.ts L44-L48).",
+      "reason": "Duplicates Finding 1/15 already kept once at P1; suppressing the duplicate per dedup rule."
+    },
+    {
+      "claim": "The transcript-extraction script hardcodes a path to a specific prior audit output as a production data source for g001, creating an undocumented dependency on a local artifact.",
+      "reason": "Duplicates Finding 4 (same file/line/issue) already kept under code_quality lens."
+    },
+    {
+      "claim": "tsconfig sets rootDir to ./src and outDir to ./dist, yet evals/README.md instructs users to run `node dist/evals/runner.js` \u2014 evals/ sits outside src/ and would not be compiled.",
+      "reason": "Could not verify the README instruction text from cited evidence; the runner may live at src/evals/runner.ts and emit to dist/evals/, which is consistent with the config. Insufficient evidence to ship."
+    },
+    {
+      "claim": "The vision client (`src/vision/client.ts`) has no corresponding test file under `tests/vision/`, while every other src/ subdirectory has matching tests.",
+      "reason": "Absence-of-test observation is structural commentary, not a defect with concrete evidence of a regression; risk of false-positive noise in audit report."
+    },
+    {
+      "claim": "Neither `src/backends/transcription.ts` nor `src/extractors/ffmpeg.ts` nor `src/extractors/source.ts` has a corresponding test file, despite being adapted from upstream MIT code.",
+      "reason": "Subprocess-wrapping code is notoriously hard to unit-test and is typically covered by smoke/integration tests; flagging coverage gaps without evidence of a defect is speculative."
+    }
+  ]
+}

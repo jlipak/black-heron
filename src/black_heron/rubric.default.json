@@ -1,0 +1,46 @@
+{
+  "rubric_version": "1.0.0",
+  "schema_version": "1.0.0",
+  "source": "bundled-default",
+
+  "severity_confidence_floors": {
+    "P0": 0.85,
+    "P1": 0.70,
+    "P2": 0.50
+  },
+
+  "severity_max_per_run": {
+    "P0": 10,
+    "P1": 25,
+    "P2": 50
+  },
+
+  "kill_switch_total_findings_cap": 50,
+
+  "lens_enabled": {
+    "code_quality": true,
+    "governance": true,
+    "drift": true,
+    "blind_spot": true
+  },
+
+  "cost_cap_usd": 2.0,
+  "time_cap_seconds": 300,
+
+  "ignore_patterns": [
+    ".git",
+    "node_modules",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "dist",
+    "build",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".idea",
+    ".vscode",
+    "audit_output",
+    "coverage"
+  ]
+}

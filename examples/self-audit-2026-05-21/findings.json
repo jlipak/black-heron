@@ -1,0 +1,159 @@
+{
+  "schema_version": "1.0.0",
+  "black_heron_version": "1.0.0",
+  "generated_at_utc": "2026-05-21T17:35:21.486177+00:00",
+  "repo": {
+    "path": "C:\\Users\\DOBY\\Desktop\\black-heron",
+    "file_count": 57,
+    "primary_language": "Python",
+    "todo_count": 22,
+    "entry_points_loaded": [
+      "pyproject.toml",
+      "src/black_heron/cli.py",
+      "src/black_heron/__init__.py",
+      "src/black_heron/lenses/__init__.py"
+    ]
+  },
+  "metrics": {
+    "wall_seconds": 298.92,
+    "total_cost_usd": 2.8927,
+    "per_lens_cost_usd": {
+      "code_quality": 0.5747,
+      "governance": 0.5711,
+      "drift": 0.6549,
+      "blind_spot": 0.7008,
+      "verifier": 0.3912
+    },
+    "per_lens_seconds": {
+      "code_quality": 48.28,
+      "governance": 50.57,
+      "drift": 63.97,
+      "blind_spot": 87.89
+    },
+    "raw_finding_counts": {
+      "code_quality": 8,
+      "governance": 6,
+      "drift": 0,
+      "blind_spot": 0
+    },
+    "rubric_version": "1.0.0",
+    "rubric_source": "bundled-default"
+  },
+  "lens_raw_counts": {
+    "code_quality": 8,
+    "governance": 6,
+    "drift": 0,
+    "blind_spot": 0
+  },
+  "verified_count": 7,
+  "rejected_count": 7,
+  "verified": [
+    {
+      "lens": "code_quality",
+      "severity": "P2",
+      "file": "src/black_heron/lenses/__init__.py",
+      "lines": "L1-L18",
+      "claim": "ALL_LENSES registry maps blind_spot to a function with a different signature than the other three lenses, yet it is stored in the same dict with no type-level distinction, making it callable with the wrong arguments if any caller iterates the dict uniformly.",
+      "evidence": "ALL_LENSES = {\n    \"code_quality\": run_code_quality,\n    \"governance\": run_governance,\n    \"drift\": run_drift,\n    \"blind_spot\": run_blind_spot,\n}",
+      "why_it_matters": "The comment documents the hazard but the design relies on every caller knowing to special-case blind_spot; a single `for name, fn in ALL_LENSES.items(): fn(ctx, client, tracker)` loop would crash or silently pass wrong args at runtime.",
+      "confidence": 0.7,
+      "verifier_note": "Real design hazard but theoretical (no caller in repo iterates uniformly); downgraded to P2 as the bundle excerpt acknowledges the signature mismatch is intentional."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P1",
+      "file": "src/black_heron/lenses/code_quality.py",
+      "lines": "L1-L68",
+      "claim": "The run functions in code_quality.py, governance.py, and drift.py are near-identical (same structure, same MODEL, same API call pattern), differing only in the SYSTEM prompt string, constituting significant code duplication across three files.",
+      "evidence": "def run(ctx: RepoContext, client: anthropic.Anthropic, tracker: CostTracker | None = None) -> list[Finding]:\n    user = build_repo_prompt(ctx)\n    response = client.messages.create(\n        model=MODEL,\n        max_tokens=4096,\n        system=[{\"type\": \"text\", \"text\": SYSTEM, \"cache_control\": {\"type\": \"ephemeral\"}}],\n        messages=[{\"role\": \"user\", \"content\": user}],\n    )",
+      "why_it_matters": "Three copies of the same 10-line function body means any change to the API call pattern (e.g., adding temperature, retry logic, or structured output) must be made in three places, increasing the risk of inconsistency.",
+      "confidence": 0.95,
+      "verifier_note": "Evidence supports the duplication claim and the maintenance burden is concrete."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P2",
+      "file": "src/black_heron/lenses/_common.py",
+      "lines": "L30-L47",
+      "claim": "parse_findings uses `text.find(\"{\")` and `text.rfind(\"}\")` to extract JSON, which will silently produce corrupt JSON if the LLM output contains multiple top-level JSON objects or prose with curly braces before/after the intended payload.",
+      "evidence": "start = text.find(\"{\")\n    end = text.rfind(\"}\")\n    if start < 0 or end <= start:\n        sys.stderr.write(f\"[bh:{lens}] no JSON block in lens output (len={len(text)})\\n\")\n        return []\n    payload = text[start:end + 1]",
+      "why_it_matters": "If the LLM wraps its JSON in markdown fences containing braces or emits explanatory prose with braces, the extracted substring may span unrelated brace pairs, causing json.loads to fail or parse a malformed object.",
+      "confidence": 0.75,
+      "verifier_note": "Real fragility but confidence below P1 floor; downgrade to P2."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P1",
+      "file": "src/black_heron/evidence_verifier.py",
+      "lines": "L35-L52",
+      "claim": "check_evidence_in_context only searches sample_files and entry_points but not the file_listing or git_log_recent, so findings that cite evidence from git commit messages (which are part of the prompt sent to the LLM) will be incorrectly flagged as evidence-not-in-bundle.",
+      "evidence": "haystack_parts = list(ctx.sample_files.values())\n    haystack_parts.extend(ep.content for ep in ctx.entry_points)\n    haystack = _norm(\"\\n\".join(haystack_parts))",
+      "why_it_matters": "The drift lens explicitly asks the LLM to cite commit messages as evidence; if git_log_recent is not in the haystack, valid drift findings will be marked evidence_in_bundle=false and the verifier will have a strong prior to reject them.",
+      "confidence": 0.9,
+      "verifier_note": "Concrete asymmetry between what is sent to LLM versus what is checked for evidence presence; affects drift findings systematically."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P1",
+      "file": "scripts/install-mcp.sh",
+      "lines": "L42",
+      "claim": "The MCP server registration hardcodes \"command\": \"py\" which only works on Windows; on Linux/macOS the Python launcher is typically `python3`, making the installed MCP config non-functional on those platforms.",
+      "evidence": "mcp_servers[\"black-heron\"] = {\n    \"command\": \"py\",\n    \"args\": [\"-m\", \"black_heron.mcp_server\"],",
+      "why_it_matters": "The script already detects the correct Python interpreter (`for cand in py python3 python`) but then ignores that detection and hardcodes \"py\" in the JSON output, breaking cross-platform portability.",
+      "confidence": 0.92,
+      "verifier_note": "Clear portability bug supported by the cited line."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P1",
+      "file": "scripts/hooks/scan-secrets.sh",
+      "lines": "L20-L27",
+      "claim": "The jq fallback regex for extracting content only captures the first match of `content` or `new_string` and uses a non-greedy pattern `[^\"]*` that will silently truncate any content containing escaped quotes, allowing secrets in later portions of the string to bypass the scan.",
+      "evidence": "CONTENT=$(echo \"$INPUT\" | grep -oE '\"(content|new_string)\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed -E 's/^\"(content|new_string)\"[[:space:]]*:[[:space:]]*\"(.*)\"$/\\2/')",
+      "why_it_matters": "If the written content contains escaped double quotes (common in code files), the regex match terminates early, and secret patterns after the first escaped quote are never scanned \u2014 this is a security bypass in the secret-scanning hook.",
+      "confidence": 0.82,
+      "verifier_note": "Real security gap but it is a fallback path (jq is the primary); downgraded from P0 to P1 since severity floor for P0 requires conf \u2265 0.85 and exploitability depends on jq being absent."
+    },
+    {
+      "lens": "governance",
+      "severity": "P1",
+      "file": "src/black_heron/evidence_verifier.py",
+      "lines": "L36-L38, L43",
+      "claim": "The evidence-presence verifier uses hardcoded thresholds (`len(needle) < 20` and `needle[:60]`) with no citation to a rubric field, spec, or prior-art justification for why 20 characters and 60-character prefix were chosen.",
+      "evidence": "evidence_verifier.py L43: `if len(needle) < 20:` with comment `# Very short evidence \u2014 too noisy to substring-match reliably`. L50: `elif needle[:60] in haystack:` with no comment explaining the 60-char cutoff. Neither 20 nor 60 appears in `rubric.default.json`.",
+      "why_it_matters": "These thresholds directly affect whether fabricated evidence is caught or missed \u2014 a security-relevant code path whose tuning parameters should be traceable to a versioned policy or documented rationale.",
+      "confidence": 0.85,
+      "verifier_note": "Despite the evidence_in_bundle=false flag, the cited file is the same evidence_verifier.py that finding 5 keeps; the magic-number governance concern is consistent with the verifier's design and is verifiable from the same source."
+    }
+  ],
+  "rejected": [
+    {
+      "claim": "The PRICES dict uses model name keys like \"claude-opus-4-6\" and \"claude-sonnet-4-6\" that do not match the actual Anthropic API model identifiers (e.g., \"claude-opus-4-20250514\"), so PRICES.get(model) will always fall through to DEFAULT_PRICE for real API responses.",
+      "reason": "Confidence 0.60 is below P1 floor of 0.70 and the finding itself flags uncertainty about what the SDK returns; speculative without evidence of actual fallthrough."
+    },
+    {
+      "claim": "The `json` and `datetime` imports at the top of cli.py are unused \u2014 json is never called in the module body, and datetime/timezone are used only via the session module's own helpers.",
+      "reason": "The finding's own uncertainty note admits cli.py may be longer than the excerpt; trivial linting issue and the claim is internally contradicted (datetime is used)."
+    },
+    {
+      "claim": "No `.env.example` file with placeholder values is committed to the repository.",
+      "reason": "evidence_in_bundle=false absence claim with no verification that the file listing was actually inspected in the bundle; P2 governance polish at best."
+    },
+    {
+      "claim": "The system prompts used by each lens are policy-bearing artifacts that carry audit methodology, severity definitions, and output schema, but none has a `version` field or any versioning identifier.",
+      "reason": "evidence_in_bundle=false; the lens excerpts in the bundle would need to be inspected and the finding's evidence is paraphrased rather than quoted, making absence unverifiable here."
+    },
+    {
+      "claim": "The audit decision-making pipeline does not persist an audit trail of the raw LLM responses (model name, prompt hash, raw response text, timestamp) for each lens invocation; only the parsed findings and final metrics are written to disk.",
+      "reason": "evidence_in_bundle=false and the claim references session.py and write_report internals not in the loaded entry-points; P0 severity unjustified without verified evidence."
+    },
+    {
+      "claim": "The Finding model has no explicit escalation verdict \u2014 valid severities are limited to `P0`, `P1`, `P2` with no `needs_human`, `escalate`, or `n/a` option to signal that the system cannot make a determination.",
+      "reason": "evidence_in_bundle=false; _models.py not in loaded entry-points and the claim is design-philosophical rather than a defect against a stated requirement."
+    },
+    {
+      "claim": "Hardcoded token pricing thresholds have no traceability to a source document or rubric field \u2014 the `PRICES` dict and `DEFAULT_PRICE` are inline magic numbers with only an informal comment ('snapshot 2026-05; verify before re-pricing').",
+      "reason": "evidence_in_bundle=false and the cited comment 'verify before re-pricing' is itself the documented traceability marker; finding overstates the governance gap."
+    }
+  ]
+}

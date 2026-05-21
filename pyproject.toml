@@ -1,0 +1,24 @@
+[project]
+name = "black-heron"
+version = "1.1.0"
+description = "Governance-first 4-lens repository audit agent with adversarial Opus verifier, evidence-presence pre-check, versioned rubric, SARIF output, MCP server, BLOCK-level hooks, sub-agent definitions, memory persistence, recursive self-audit"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40",
+    "rich>=13",
+    "pydantic>=2",
+    "click>=8",
+    "python-dotenv>=1",
+]
+
+[project.scripts]
+black-heron = "black_heron.cli:audit"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

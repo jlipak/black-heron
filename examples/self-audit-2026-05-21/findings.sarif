@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Black Heron",
+          "version": "1.0.0",
+          "informationUri": "https://github.com/lipakjosip442-png/black-heron",
+          "rules": [
+            {
+              "id": "BH/code_quality/P2",
+              "name": "code_quality-P2",
+              "shortDescription": {
+                "text": "code_quality lens, severity P2"
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            },
+            {
+              "id": "BH/code_quality/P1",
+              "name": "code_quality-P1",
+              "shortDescription": {
+                "text": "code_quality lens, severity P1"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "BH/governance/P1",
+              "name": "governance-P1",
+              "shortDescription": {
+                "text": "governance lens, severity P1"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "BH/code_quality/P2",
+          "level": "note",
+          "message": {
+            "text": "ALL_LENSES registry maps blind_spot to a function with a different signature than the other three lenses, yet it is stored in the same dict with no type-level distinction, making it callable with the wrong arguments if any caller iterates the dict uniformly."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/black_heron/lenses/__init__.py"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.7,
+            "lens": "code_quality",
+            "severity": "P2",
+            "why_it_matters": "The comment documents the hazard but the design relies on every caller knowing to special-case blind_spot; a single `for name, fn in ALL_LENSES.items(): fn(ctx, client, tracker)` loop would crash or silently pass wrong args at runtime.",
+            "verifier_note": "Real design hazard but theoretical (no caller in repo iterates uniformly); downgraded to P2 as the bundle excerpt acknowledges the signature mismatch is intentional."
+          }
+        },
+        {
+          "ruleId": "BH/code_quality/P1",
+          "level": "warning",
+          "message": {
+            "text": "The run functions in code_quality.py, governance.py, and drift.py are near-identical (same structure, same MODEL, same API call pattern), differing only in the SYSTEM prompt string, constituting significant code duplication across three files."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/black_heron/lenses/code_quality.py"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.95,
+            "lens": "code_quality",
+            "severity": "P1",
+            "why_it_matters": "Three copies of the same 10-line function body means any change to the API call pattern (e.g., adding temperature, retry logic, or structured output) must be made in three places, increasing the risk of inconsistency.",
+            "verifier_note": "Evidence supports the duplication claim and the maintenance burden is concrete."
+          }
+        },
+        {
+          "ruleId": "BH/code_quality/P2",
+          "level": "note",
+          "message": {
+            "text": "parse_findings uses `text.find(\"{\")` and `text.rfind(\"}\")` to extract JSON, which will silently produce corrupt JSON if the LLM output contains multiple top-level JSON objects or prose with curly braces before/after the intended payload."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/black_heron/lenses/_common.py"
+                },
+                "region": {
+                  "startLine": 30
+                }
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.75,
+            "lens": "code_quality",
+            "severity": "P2",
+            "why_it_matters": "If the LLM wraps its JSON in markdown fences containing braces or emits explanatory prose with braces, the extracted substring may span unrelated brace pairs, causing json.loads to fail or parse a malformed object.",
+            "verifier_note": "Real fragility but confidence below P1 floor; downgrade to P2."
+          }
+        },
+        {
+          "ruleId": "BH/code_quality/P1",
+          "level": "warning",
+          "message": {
+            "text": "check_evidence_in_context only searches sample_files and entry_points but not the file_listing or git_log_recent, so findings that cite evidence from git commit messages (which are part of the prompt sent to the LLM) will be incorrectly flagged as evidence-not-in-bundle."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/black_heron/evidence_verifier.py"
+                },
+                "region": {
+                  "startLine": 35
+                }
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.9,
+            "lens": "code_quality",
+            "severity": "P1",
+            "why_it_matters": "The drift lens explicitly asks the LLM to cite commit messages as evidence; if git_log_recent is not in the haystack, valid drift findings will be marked evidence_in_bundle=false and the verifier will have a strong prior to reject them.",
+            "verifier_note": "Concrete asymmetry between what is sent to LLM versus what is checked for evidence presence; affects drift findings systematically."
+          }
+        },
+        {
+          "ruleId": "BH/code_quality/P1",
+          "level": "warning",
+          "message": {
+            "text": "The MCP server registration hardcodes \"command\": \"py\" which only works on Windows; on Linux/macOS the Python launcher is typically `python3`, making the installed MCP config non-functional on those platforms."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "scripts/install-mcp.sh"
+                },
+                "region": {
+                  "startLine": 42
+                }
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.92,
+            "lens": "code_quality",
+            "severity": "P1",
+            "why_it_matters": "The script already detects the correct Python interpreter (`for cand in py python3 python`) but then ignores that detection and hardcodes \"py\" in the JSON output, breaking cross-platform portability.",
+            "verifier_note": "Clear portability bug supported by the cited line."
+          }
+        },
+        {
+          "ruleId": "BH/code_quality/P1",
+          "level": "warning",
+          "message": {
+            "text": "The jq fallback regex for extracting content only captures the first match of `content` or `new_string` and uses a non-greedy pattern `[^\"]*` that will silently truncate any content containing escaped quotes, allowing secrets in later portions of the string to bypass the scan."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "scripts/hooks/scan-secrets.sh"
+                },
+                "region": {
+                  "startLine": 20
+                }
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.82,
+            "lens": "code_quality",
+            "severity": "P1",
+            "why_it_matters": "If the written content contains escaped double quotes (common in code files), the regex match terminates early, and secret patterns after the first escaped quote are never scanned \u2014 this is a security bypass in the secret-scanning hook.",
+            "verifier_note": "Real security gap but it is a fallback path (jq is the primary); downgraded from P0 to P1 since severity floor for P0 requires conf \u2265 0.85 and exploitability depends on jq being absent."
+          }
+        },
+        {
+          "ruleId": "BH/governance/P1",
+          "level": "warning",
+          "message": {
+            "text": "The evidence-presence verifier uses hardcoded thresholds (`len(needle) < 20` and `needle[:60]`) with no citation to a rubric field, spec, or prior-art justification for why 20 characters and 60-character prefix were chosen."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/black_heron/evidence_verifier.py"
+                },
+                "region": {
+                  "startLine": 36
+                }
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.85,
+            "lens": "governance",
+            "severity": "P1",
+            "why_it_matters": "These thresholds directly affect whether fabricated evidence is caught or missed \u2014 a security-relevant code path whose tuning parameters should be traceable to a versioned policy or documented rationale.",
+            "verifier_note": "Despite the evidence_in_bundle=false flag, the cited file is the same evidence_verifier.py that finding 5 keeps; the magic-number governance concern is consistent with the verifier's design and is verifiable from the same source."
+          }
+        }
+      ],
+      "originalUriBaseIds": {
+        "%SRCROOT%": {
+          "uri": "file:///C:/Users/DOBY/Desktop/black-heron/"
+        }
+      }
+    }
+  ]
+}
