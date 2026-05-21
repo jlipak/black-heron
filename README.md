@@ -1,7 +1,7 @@
 # Black Heron
 
 > Multi-lens, governance-first repository audit agent with an adversarial verifier.
-> **v1.3** — 4 lenses + adversarial Opus verifier, evidence-presence pre-check, versioned rubric, SARIF output, parallel lens execution, code-writing suggest mode, and external MCP enrichment (context7 / sequential-thinking / firecrawl / playwright).
+> **v1.3.1** — 4 lenses + adversarial Opus verifier, evidence-presence pre-check, versioned rubric, SARIF output, parallel lens execution, code-writing suggest mode, external MCP enrichment (context7 / sequential-thinking / firecrawl / playwright), and **deterministic baseline drift** (`--baseline previous.json`).
 
 ```
        ___
@@ -14,6 +14,14 @@
 ## What it does
 
 Run Black Heron on a local repository. It runs four independent lenses (`code_quality`, `governance`, `drift`, `blind_spot`) and pipes their findings through an adversarial verifier (Opus) that challenges each one. The output is a Markdown report, a structured JSON file, and a SARIF 2.1.0 file (GitHub Code Scanning compatible). No CI integration, no auto-fix, no patch generation — Black Heron is an **audit**, in the legal sense: a snapshot meant to inform a reviewer.
+
+**New in v1.3.1** — Phase R: baseline drift mode.
+- `--baseline previous-findings.json` — compute set-difference drift between a prior audit and this one. No LLM call, fully deterministic
+- 4 buckets surface in `REPORT.md` right under the Summary: **new** / **closed** / **persisting** / **drifted**
+- Identity hash collapses `lens + file + start-line + first-8-words(claim)` so the same issue across runs collapses to the same key even if the LLM rephrases the claim
+- Persisting P0/P1 = explicit compliance-debt signal — surfaced as a callout in the report
+- Closed findings carry a "verify in `git log`" note — closed without a fix commit may indicate masking rather than fixing (Apollo-reverse discipline)
+- Missing or malformed baseline = audit continues, skip reason is logged in the report (Law IV: partial result is honest)
 
 **New in v1.3** — Phase G: external-MCP enrichment.
 - `--enrich context7,firecrawl,playwright,sequential-thinking` — opt in to one or more 3rd-party MCP servers; each enricher attaches its data to the prompt bundle the lenses see
@@ -45,6 +53,21 @@ cp .env.example .env  # add your ANTHROPIC_API_KEY
 black-heron /path/to/some/repo --out audit/
 # OR:
 python -m black_heron.cli /path/to/some/repo --out audit/
+```
+
+### Audit-over-time with `--baseline` (v1.3.1)
+
+```bash
+# First audit — save findings.json as T0
+black-heron /path/to/repo --out audit-T0/
+
+# ... fix some issues, ship some commits ...
+
+# Second audit — diff against T0
+black-heron /path/to/repo --baseline audit-T0/findings.json --out audit-T1/
+
+# REPORT.md will gain a "Drift since baseline" section under the Summary.
+# Persisting P0/P1 findings are flagged as compliance debt.
 ```
 
 ### Opt into external MCP enrichment (v1.3)

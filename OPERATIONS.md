@@ -1,4 +1,4 @@
-# Operations — Black Heron v1.3
+# Operations — Black Heron v1.3.1
 
 How to install, run, and operate Black Heron in real workflows.
 
@@ -48,6 +48,39 @@ Via MCP server (after install-mcp.sh):
 ```
 mcp__black_heron__quick_scan({"repo_path": "/path/to/repo"})
 ```
+
+### Audit-over-time with `--baseline` (v1.3.1 / Phase R)
+
+Black Heron answers "what changed since the last audit?" deterministically — no LLM, no extra spend.
+
+```bash
+# Audit once, keep findings.json as the baseline
+black-heron /path/to/repo --out audit/2026-05-21/
+
+# Time passes, fixes ship, drift accumulates
+# Re-audit with the prior findings as baseline
+black-heron /path/to/repo \
+    --baseline audit/2026-05-21/findings.json \
+    --out audit/2026-06-04/
+```
+
+`REPORT.md` will gain a "Drift since baseline" section directly under the Summary. Four buckets:
+
+| Bucket | What it means | Governance signal |
+|---|---|---|
+| **New** | Identity-hash absent from baseline, present now | New attack surface introduced this cycle |
+| **Closed** | Present in baseline, absent now | Verify in `git log` — closed without a commit may indicate masking |
+| **Persisting** | Same identity + same severity + same evidence | Each persisting P0/P1 = one audit cycle of unfixed compliance debt |
+| **Drifted** | Identity match but severity / confidence / evidence shifted | De-escalation without fix-commit often = LLM noise; investigate |
+
+Identity hash: `sha256(lens | file | start-line | first-8-words(claim))`. Collapses LLM-rephrased claims to the same key as long as the first 8 claim words and the same lens / file / start-line agree.
+
+Drift triggers (any one moves a finding to `drifted`):
+- severity change (any direction)
+- `|Δconfidence| > 0.2`
+- evidence string is not a substring-equal match (substring counts as same — broadening/narrowing the quote isn't drift)
+
+Missing / malformed baseline = `REPORT.md` shows the skip reason in the drift section; audit completes normally. The drift compute is pure set-arithmetic — adds essentially no wall time to the audit.
 
 ### Audit with external MCP enrichment (v1.3 / Phase G)
 

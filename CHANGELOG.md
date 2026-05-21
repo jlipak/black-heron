@@ -2,6 +2,57 @@
 
 All notable changes to Black Heron. SemVer.
 
+## [1.3.1] — 2026-05-21
+
+The "baseline drift" release. Phase R: Black Heron now answers "what changed since the last audit?" deterministically (no LLM). Run an audit, save findings.json, fix some issues, run again with `--baseline previous.json` — REPORT.md gains a "Drift since baseline" section with new / closed / persisting / drifted buckets. Backward-compatible; no flag = identical behavior to v1.3.0.
+
+### Added — Deterministic drift module
+- `src/black_heron/drift.py`: `compute_identity_hash(finding)` + `categorize(current, baseline)` + `DriftReport` dataclass
+- Identity hash = `sha256(lens | file | normalized_lines | first_8_words(claim))`
+  - `normalized_lines` collapses `"L42-L88"` and `"42"` to the same key (start line only)
+  - `first_8_words(claim)` lowercases, drops punctuation, keeps first 8 word tokens — robust to LLM rephrasing of the same issue
+- 4 buckets: `new` (in current, not in baseline), `closed` (in baseline, not in current), `persisting` (identity match, same severity / confidence / evidence), `drifted` (identity match but at least one of severity / |Δconfidence|>0.2 / evidence substring changed)
+- Pure function: no I/O, no Anthropic API. Phase R is **observable** drift, not LLM-judged drift (Law VII)
+- `load_baseline_findings()` accepts three shapes: full Black Heron findings.json (`{"verified": [...]}`), generic `{"findings": [...]}`, or a bare list. Malformed or missing baseline produces `available=False` + `skipped_reason` — audit continues (Law IV: partial result is honest, crash is not)
+
+### Added — CLI `--baseline <path>`
+- New flag in `cli.py`; defaults to none = identical behavior to v1.3.0
+- Path validation is deferred (no `exists=True` on click.Path) so the loader can produce a friendly skip message rather than click exiting with a generic error
+- Console summary line after the verifier: `Drift vs baseline [path]: new=N, closed=M, persisting=K, drifted=L`
+- On skip, prints `Drift baseline skipped: <reason>` and audit continues
+
+### Added — REPORT.md "Drift since baseline" section + findings.json `baseline_diff` field
+- Rendered immediately after the volume-calibrated Summary so Marko sees it before scrolling
+- Bucket-count table + per-bucket subsections (`### New findings`, `### Closed findings`, `### Drifted findings`)
+- **Compliance debt signal** callout when P0/P1 findings persist — each persisting high-severity finding is one audit cycle of unfixed risk
+- **Closed-findings note** flags Apollo-reverse risk: closed without commit evidence may indicate masking rather than fixing
+- **Drifted-findings note** flags severity de-escalation without fix-commit as common LLM noise
+- `findings.json.baseline_diff` carries the full payload (counts + arrays + each finding's `identity_hash`) for machine consumption
+- SARIF is intentionally unchanged — SARIF is a snapshot format, drift is meta
+
+### Tests (57 → 81)
+- `tests/test_drift.py` (24 tests):
+  - Identity stability across line-format variants, punctuation+case, robust to LLM rephrasing
+  - Identity changes when file / lens / claim-prefix differs
+  - All 4 buckets exercised (empty baseline = all new, identical = all persisting, removal = closed, severity change = drifted, large confidence change = drifted, small change = persisting, evidence substring = persisting, evidence change = drifted)
+  - Defensive loader covers missing path, None path, malformed JSON, unrecognized shape, full findings.json shape, bare list, generic `{"findings":[]}` shape
+  - `to_payload()` returns all 4 buckets + counts
+
+### Changed
+- `report.BLACK_HERON_VERSION` and `mcp_server.SERVER_VERSION` → `1.3.1`
+- `write_report()` gains a `baseline_diff` kwarg (default empty); backward-compatible (mcp_server.py call unchanged)
+- CLI panel header now includes `Baseline:` line
+
+### Compatibility
+- v1.3.1 is a pure additive at the CLI: `black-heron <repo>` with no new flags behaves identically to v1.3.0
+- `findings.json` schema gains the `baseline_diff` top-level field; consumers reading only `verified` / `rejected` / `metrics` are unaffected
+- MCP server tools (`audit_repository`, `verify_findings`, `quick_scan`) unchanged
+
+### Honest gaps (deferred to v1.4)
+- Identity heuristic is start-line-only — a finding that moves from line 10 to line 110 in the same file with the same first-8-words and same lens will be flagged as `persisting`, not as a real change. The line-shift signal is intentionally hidden because line drift is too noisy in practice; trade-off documented in `KNOWN_LIMITATIONS.md` FM7
+- Closed findings aren't auto-correlated with `git log`; the report tells the reader to verify, but doesn't itself fetch the log
+- No multi-baseline mode (`--baseline previous-N.json --baseline previous-N-1.json`) — single comparison only
+
 ## [1.3.0] — 2026-05-21
 
 The "external-MCP enrichment" release. Phase G: Black Heron now consumes 3rd-party MCP servers to enrich its audit context — context7 for live library docs, firecrawl for external URLs, playwright for JS-rendered pages, sequential-thinking for architectural reasoning. Default: OFF; backward-compatible with all v1.2 commands.

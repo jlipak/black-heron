@@ -10,7 +10,7 @@ from .synthesis import VerifierResult
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2}
 SARIF_LEVEL = {"P0": "error", "P1": "warning", "P2": "note"}
-BLACK_HERON_VERSION = "1.3.0"
+BLACK_HERON_VERSION = "1.3.1"
 
 
 def write_report(
@@ -20,13 +20,15 @@ def write_report(
     lens_raw_counts: dict[str, int],
     metrics: dict | None = None,
     suggested_patches: list[dict] | None = None,
+    baseline_diff: dict | None = None,
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     metrics = metrics or {}
     patches = suggested_patches or []
-    _write_findings_json(out_dir / "findings.json", ctx, verifier, lens_raw_counts, metrics, patches)
+    bd = baseline_diff or {"available": False}
+    _write_findings_json(out_dir / "findings.json", ctx, verifier, lens_raw_counts, metrics, patches, bd)
     _write_findings_sarif(out_dir / "findings.sarif", ctx, verifier)
-    _write_report_md(out_dir / "REPORT.md", ctx, verifier, lens_raw_counts, metrics, patches)
+    _write_report_md(out_dir / "REPORT.md", ctx, verifier, lens_raw_counts, metrics, patches, bd)
 
 
 def _write_findings_json(
@@ -36,6 +38,7 @@ def _write_findings_json(
     raw: dict,
     metrics: dict,
     patches: list[dict],
+    baseline_diff: dict,
 ) -> None:
     payload = {
         "schema_version": "1.0.0",
@@ -55,6 +58,7 @@ def _write_findings_json(
         "verified": v.verified,
         "rejected": v.rejected,
         "suggested_patches": patches,
+        "baseline_diff": baseline_diff,
     }
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
@@ -114,6 +118,117 @@ def _write_findings_sarif(path: Path, ctx: RepoContext, v: VerifierResult) -> No
     path.write_text(json.dumps(sarif, indent=2), encoding="utf-8")
 
 
+def _render_drift_section(lines: list[str], baseline_diff: dict) -> None:
+    """Render 'Drift since baseline' immediately after the Summary block.
+
+    Schema follows DriftReport.to_payload(): `available`, `skipped_reason`,
+    `baseline_path`, `baseline_generated_at`, `counts`, `new`, `closed`,
+    `persisting`, `drifted`. When `available` is False, we still surface the
+    skipped reason so silent absence is impossible (Law V).
+    """
+    if not baseline_diff:
+        return
+    if not baseline_diff.get("available"):
+        reason = baseline_diff.get("skipped_reason")
+        if reason and baseline_diff.get("baseline_path"):
+            lines.append("## Drift since baseline")
+            lines.append("")
+            lines.append(
+                f"Baseline path supplied (`{baseline_diff.get('baseline_path')}`) "
+                f"but drift was skipped: **{reason}**. Audit completed without a drift section."
+            )
+            lines.append("")
+        return
+
+    counts = baseline_diff.get("counts") or {}
+    new = baseline_diff.get("new") or []
+    closed = baseline_diff.get("closed") or []
+    persisting = baseline_diff.get("persisting") or []
+    drifted = baseline_diff.get("drifted") or []
+    baseline_path = baseline_diff.get("baseline_path") or "(unknown)"
+    baseline_ts = baseline_diff.get("baseline_generated_at") or "(unknown timestamp)"
+
+    lines.append("## Drift since baseline")
+    lines.append("")
+    lines.append(f"**Baseline:** `{baseline_path}` (generated {baseline_ts})")
+    lines.append("")
+    lines.append("| Bucket | Count | Note |")
+    lines.append("|---|---|---|")
+    lines.append(f"| New | {counts.get('new', len(new))} | First seen this run |")
+    lines.append(
+        f"| Closed | {counts.get('closed', len(closed))} | Present in baseline, gone now (verify in `git log`) |"
+    )
+    lines.append(
+        f"| Persisting | {counts.get('persisting', len(persisting))} | Same severity since baseline — accumulating debt if P0/P1 |"
+    )
+    lines.append(
+        f"| Drifted | {counts.get('drifted', len(drifted))} | Identity match but severity/confidence/evidence changed |"
+    )
+    lines.append("")
+
+    # Persisting P0/P1 callout — governance signal
+    p0_p1_persist = [f for f in persisting if f.get("severity") in ("P0", "P1")]
+    if p0_p1_persist:
+        lines.append(
+            f"**Compliance debt signal:** {len(p0_p1_persist)} P0/P1 finding(s) persist since baseline. "
+            f"Each persisting high-severity finding is one audit-cycle of unfixed risk."
+        )
+        lines.append("")
+
+    if new:
+        lines.append(f"### New findings ({len(new)})")
+        lines.append("")
+        for i, f in enumerate(new, 1):
+            lines.append(
+                f"- **{i}.** [{f.get('lens', '?')}/{f.get('severity', '?')}] "
+                f"`{f.get('file', '?')}` lines `{f.get('lines', '?')}`: {f.get('claim', '?')}"
+            )
+        lines.append("")
+
+    if closed:
+        lines.append(f"### Closed findings ({len(closed)})")
+        lines.append("")
+        lines.append(
+            "_Closed findings should correspond to fixes in `git log`. If you don't see a commit "
+            "between baseline and now that touches the referenced file, the finding may have been "
+            "masked (rephrased / dropped by a lens) rather than fixed — investigate before treating "
+            "as resolved._"
+        )
+        lines.append("")
+        for i, f in enumerate(closed, 1):
+            lines.append(
+                f"- **{i}.** [{f.get('lens', '?')}/{f.get('severity', '?')}] "
+                f"`{f.get('file', '?')}` lines `{f.get('lines', '?')}`: {f.get('claim', '?')}"
+            )
+        lines.append("")
+
+    if drifted:
+        lines.append(f"### Drifted findings ({len(drifted)})")
+        lines.append("")
+        lines.append(
+            "_Identity matches the baseline finding but severity, confidence, or evidence has shifted. "
+            "Severity de-escalation (P1 → P2) without a corresponding fix commit is often LLM noise; "
+            "verify against `git log`._"
+        )
+        lines.append("")
+        for i, d in enumerate(drifted, 1):
+            cur = d.get("current") or {}
+            base = d.get("baseline") or {}
+            reasons = d.get("drift_reasons") or []
+            lines.append(
+                f"- **{i}.** `{cur.get('file', '?')}` lines `{cur.get('lines', '?')}`: "
+                f"{cur.get('claim', '?')}"
+            )
+            lines.append(
+                f"  - baseline: severity={base.get('severity', '?')}, confidence={base.get('confidence', '?')}"
+            )
+            lines.append(
+                f"  - current : severity={cur.get('severity', '?')}, confidence={cur.get('confidence', '?')}"
+            )
+            lines.append(f"  - drift reasons: {', '.join(reasons) if reasons else '(none cited)'}")
+        lines.append("")
+
+
 def _parse_start_line(line_str: str) -> int:
     """Extract integer start line from 'L42', 'L42-L88', 'commits', etc."""
     if not line_str:
@@ -145,6 +260,7 @@ def _write_report_md(
     raw: dict,
     metrics: dict,
     patches: list[dict],
+    baseline_diff: dict,
 ) -> None:
     by_sev: dict[str, list[dict]] = {"P0": [], "P1": [], "P2": []}
     for f in v.verified:
@@ -168,6 +284,8 @@ def _write_report_md(
     lines.append("")
     lines.append(_volume_summary(len(v.verified), len(v.rejected), p0, p1, p2))
     lines.append("")
+
+    _render_drift_section(lines, baseline_diff)
 
     # Metrics block
     if metrics:

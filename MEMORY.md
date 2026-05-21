@@ -4,11 +4,11 @@
 
 ## NEXT (priority order)
 
-- [ ] **RESUME COMMAND for next session:** `cook v1.3 phase R` (baseline drift-over-time mode `--baseline previous.json`). Phase G is shipped.
+- [ ] **RESUME COMMAND for next session:** `cook v1.3 phase S` (content-hash caching across audits). Phase R shipped.
+- [x] Phase R — baseline drift-over-time mode (`--baseline previous.json`). Shipped 2026-05-21. 81 tests passing. Set arithmetic on identity hash — no LLM, deterministic.
 - [x] Phase G — BH consumes external MCPs (context7, sequential-thinking, firecrawl, playwright). Shipped 2026-05-21. 57 tests passing. Default `--enrich none` so v1.2 commands unchanged.
 - [ ] BH v1.3 sprint (active, continues):
-      - Phase R — baseline drift-over-time mode (`--baseline previous.json`) ← START HERE next session
-      - Phase S — content-hash caching across audits
+      - Phase S — content-hash caching across audits ← START HERE next session
       - Phase O — GitHub Actions workflow example
       - Phase P — GitHub URL ingest (`black-heron https://github.com/...`)
       - Phase Q — HITL queue for ambiguous findings
@@ -22,7 +22,7 @@
 
 ## Active Projects
 
-- **Black Heron v1.3** — Phase G external-MCP enrichment shipped 2026-05-21. CLI `--enrich` opt-in, 4 enricher adapters, generic JSON-RPC stdio client, mcp.default.json bundled, 22 new tests (57 total). v1.2 features (code-writing + parallel + tests) still in place.
+- **Black Heron v1.3.1** — Phase R baseline drift mode shipped 2026-05-21. `--baseline previous.json` flag, deterministic set-difference categorization on identity hash, 4 buckets (new/closed/persisting/drifted), 24 new drift tests (81 total). Phase G enrichment still in place from earlier in session.
 - **QURE clean-staging** — awaits push (separate repo, separate session).
 
 ## SHIKA Profile
@@ -77,4 +77,4 @@
 - Average cost per audit: ~$2.89 (v1.1 self-audit, Opus-everywhere)
 - Average wall time: ~299s (parallel execution will reduce significantly in next run)
 - Verifier reject ratio average: 50% (v1.1 self-audit)
-- Tests: 57 passing (35 v1.2 baseline + 5 mcp_client + 7 enrichment + 10 mcp_consumers in Phase G)
+- Tests: 81 passing (57 post-Phase-G baseline + 24 drift in Phase R)

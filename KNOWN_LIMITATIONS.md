@@ -60,6 +60,22 @@ Honest documentation of what Black Heron does *not* do yet, what known failure m
 
 **Residual risk:** Short evidence quotes (< 20 chars) skip the substring check (too noisy). Evidence that the lens paraphrased rather than quoted verbatim will fail the check even when the underlying claim is sound. Trade-off: prefer false-rejection over false-acceptance.
 
+### FM7 — Drift identity heuristic is line-position-tolerant (v1.3.1)
+
+**Symptom:** The drift identity hash uses only the *start* line (collapses `"L42-L88"` and `"42"` to the same key). A finding that moves from line 10 to line 110 in the same file, same lens, same first-8-words of claim, will be flagged as `persisting`, not as a real change.
+
+**Mitigation in v1.3.1:** This is a deliberate trade-off. Source-line drift is extremely noisy in real repos (adding an import shifts every subsequent finding's line number); a strict-line identity heuristic would mark nearly every persisting finding as `closed` + `new` every audit. Optional `--strict-line-identity` mode is a v1.4 candidate.
+
+**Residual risk:** A finding that genuinely moved to an unrelated code path within the same file (e.g., refactored from `def parse(x)` at L10 to a new `def parse(y)` at L110 with a different semantics) will be silently mislabeled as `persisting`. Verify in `git log`.
+
+### FM8 — Closed findings not correlated with git log (v1.3.1)
+
+**Symptom:** A finding shows up as `closed` because the current audit didn't produce it — but the cause might be the lens being tighter (or noisier) on this run, not the code actually changing. Apollo-reverse risk.
+
+**Mitigation in v1.3.1:** The `Closed findings` section in `REPORT.md` carries an explicit reader-facing note: "Closed findings should correspond to fixes in `git log`. If you don't see a commit between baseline and now that touches the referenced file, the finding may have been masked rather than fixed — investigate before treating as resolved."
+
+**Residual risk:** Black Heron doesn't itself fetch the git log diff between baseline and now. v1.4 candidate: auto-link closed findings to commits that touched the referenced file between the baseline timestamp and now.
+
 ### FM6 — Enrichment as a fabrication surface (v1.3)
 
 **Symptom:** v1.3 enrichment pipes external MCP content into the prompt bundle. A lens could mistakenly cite an enrichment block as in-repo evidence — fabricating cross-file context that doesn't live in the actual repo.

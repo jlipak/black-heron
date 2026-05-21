@@ -19,6 +19,7 @@ from ._models import Rubric
 from .code_writer import suggest_patches
 from .cost_tracker import CostTracker
 from .discovery import build_context
+from .drift import compute_drift_from_file
 from .enrichment import enrich_context, parse_enrich_flag
 from .lenses import ALL_LENSES, run_blind_spot
 from .mcp_consumers import ALL_ENRICHERS, load_mcp_config
@@ -87,6 +88,14 @@ console = Console()
     default=None,
     help="Path to a custom MCP config JSON. Falls back to ~/.black-heron/mcp.json, then bundled default.",
 )
+@click.option(
+    "--baseline",
+    "baseline_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    default=None,
+    help="Path to a prior findings.json to compute drift against. "
+         "Missing or malformed baseline is logged + skipped (audit still runs).",
+)
 def audit(
     repo_path: Path,
     lens_arg: str,
@@ -100,6 +109,7 @@ def audit(
     parallel: bool,
     enrich_arg: str,
     mcp_config_path: Path | None,
+    baseline_path: Path | None,
 ) -> None:
     """Run a Black Heron audit on REPO_PATH and write reports to --out."""
     if env_path is not None:
@@ -134,6 +144,7 @@ def audit(
         f"Repo: [cyan]{repo_path}[/cyan]\n"
         f"Lenses: {', '.join(lens_list)}\n"
         f"Enrich: {enrich_arg or 'none'}\n"
+        f"Baseline: {baseline_path or 'none'}\n"
         f"Rubric: [magenta]{rubric.rubric_version}[/magenta] | "
         f"Cost cap: ${rubric.cost_cap_usd:.2f} | Time cap: {rubric.time_cap_seconds}s"
         + ("  [yellow](DRY RUN)[/yellow]" if dry_run else ""),
@@ -284,6 +295,20 @@ def audit(
         f"\n[bold]Totals:[/bold] wall {wall_seconds:.1f}s, cost ${tracker.cost_so_far:.3f}"
     )
 
+    drift_report = compute_drift_from_file(verifier.verified, baseline_path)
+    if baseline_path is not None:
+        if drift_report.available:
+            c = drift_report.counts()
+            console.print(
+                f"[bold]Drift vs baseline[/bold] [{baseline_path}]: "
+                f"new={c['new']}, closed={c['closed']}, "
+                f"persisting={c['persisting']}, drifted={c['drifted']}"
+            )
+        else:
+            console.print(
+                f"[yellow]Drift baseline skipped:[/yellow] {drift_report.skipped_reason}"
+            )
+
     metrics = {
         "wall_seconds": round(wall_seconds, 2),
         "total_cost_usd": round(tracker.cost_so_far, 4),
@@ -296,7 +321,15 @@ def audit(
         "suggested_patches_count": len(suggested_patches),
         "enrichment": [r.as_metric() for r in enrichment_reports],
     }
-    write_report(out_dir, ctx, verifier, raw_counts, metrics, suggested_patches)
+    write_report(
+        out_dir,
+        ctx,
+        verifier,
+        raw_counts,
+        metrics,
+        suggested_patches,
+        baseline_diff=drift_report.to_payload(),
+    )
     console.print(
         f"\n[bold green]Reports written:[/bold green] "
         f"{out_dir / 'REPORT.md'} | {out_dir / 'findings.json'} | {out_dir / 'findings.sarif'}"
