@@ -4,8 +4,9 @@
 
 ## NEXT (priority order)
 
-- [ ] **RESUME COMMAND for next session:** `cook v1.3 phase O` (GitHub Actions workflow example). Phase S shipped.
-- [x] Phase S — content-hash cache across audits (`--no-cache` to bypass). Shipped 2026-05-21. 103 tests passing. SHA256 over RepoContext, sharded `~/.black-heron/cache/<key[:2]>/<key[2:18]>/<lens>.json`, atomic write, format_version=1. CLI only — MCP server uncached (FM9).
+- [ ] **RESUME COMMAND for next session:** `cook v1.3 phase P` (GitHub URL ingest). Phase O shipped.
+- [x] Phase O — GitHub Actions workflow template + FM9 fix (cache covers MCP server too). Shipped 2026-05-22. 103 tests passing. v1.3.3. `.github/workflows/black-heron.yml` ready to copy-paste into target repos.
+- [x] Phase S — content-hash cache across audits (`--no-cache` to bypass). Shipped 2026-05-21. 103 tests passing. SHA256 over RepoContext, sharded `~/.black-heron/cache/<key[:2]>/<key[2:18]>/<lens>.json`, atomic write, format_version=1. v1.3.3: cache extended to MCP server (FM9 resolved).
 - [x] Phase R — baseline drift-over-time mode (`--baseline previous.json`). Shipped 2026-05-21. 81 tests passing. Set arithmetic on identity hash — no LLM, deterministic.
 - [x] Phase G — BH consumes external MCPs (context7, sequential-thinking, firecrawl, playwright). Shipped 2026-05-21. 57 tests passing. Default `--enrich none` so v1.2 commands unchanged.
 - [ ] BH v1.3 sprint (active, continues):
