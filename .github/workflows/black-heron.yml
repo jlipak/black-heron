@@ -1,18 +1,23 @@
 # Black Heron — example CI audit workflow
 #
-# Drop this file into your own repository at `.github/workflows/black-heron.yml`
-# and add the secret `ANTHROPIC_API_KEY` (Settings -> Secrets and variables -> Actions).
+# Drop this file into your own repository at `.github/workflows/black-heron.yml`,
+# add the secret `ANTHROPIC_API_KEY` (Settings -> Secrets and variables -> Actions),
+# and then UNCOMMENT the `pull_request` and `push` triggers below to enable auto-audit.
 # Findings will appear in the Security tab as Code Scanning alerts (SARIF) and as a
 # summary comment on each PR.
+#
+# As shipped (manual-trigger only) so that this template, when sitting in the
+# Black Heron monorepo itself, does not fire automatic audits with no API key set.
 
 name: Black Heron audit
 
 on:
-  pull_request:
-    branches: [main, master]
-  push:
-    branches: [main, master]
-  workflow_dispatch:  # allow manual trigger from the Actions tab
+  # Uncomment the two triggers below after configuring ANTHROPIC_API_KEY:
+  # pull_request:
+  #   branches: [main, master]
+  # push:
+  #   branches: [main, master]
+  workflow_dispatch:  # manual trigger from the Actions tab — always enabled
 
 permissions:
   contents: read
