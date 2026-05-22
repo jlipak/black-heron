@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Black Heron",
+          "version": "1.0.0-skill",
+          "informationUri": "https://github.com/lipakjosip442-png/black-heron",
+          "rules": [
+            {
+              "id": "BH/governance/P0",
+              "name": "governance-P0",
+              "shortDescription": {"text": "governance lens, severity P0"},
+              "defaultConfiguration": {"level": "error"}
+            },
+            {
+              "id": "BH/code_quality/P1",
+              "name": "code_quality-P1",
+              "shortDescription": {"text": "code_quality lens, severity P1"},
+              "defaultConfiguration": {"level": "warning"}
+            },
+            {
+              "id": "BH/governance/P1",
+              "name": "governance-P1",
+              "shortDescription": {"text": "governance lens, severity P1"},
+              "defaultConfiguration": {"level": "warning"}
+            },
+            {
+              "id": "BH/drift/P1",
+              "name": "drift-P1",
+              "shortDescription": {"text": "drift lens, severity P1"},
+              "defaultConfiguration": {"level": "warning"}
+            },
+            {
+              "id": "BH/blind_spot/P1",
+              "name": "blind_spot-P1",
+              "shortDescription": {"text": "blind_spot lens, severity P1"},
+              "defaultConfiguration": {"level": "warning"}
+            },
+            {
+              "id": "BH/drift/P2",
+              "name": "drift-P2",
+              "shortDescription": {"text": "drift lens, severity P2"},
+              "defaultConfiguration": {"level": "note"}
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "BH/governance/P0",
+          "level": "error",
+          "message": {"text": "ANTHROPIC_API_KEY referenced directly in source without .env.example schema documentation"},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "src/acme_billing/main.py"},
+                "region": {"startLine": 18}
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.92,
+            "lens": "governance",
+            "severity": "P0",
+            "why_it_matters": "A new contributor cloning the repo sees the key reference but has no scaffolded .env.example to know which env vars are required.",
+            "verifier_note": "Confirmed via file listing: no .env.example in repo. The env var is required at module-load time, so the failure surface is large. P0 stands."
+          }
+        },
+        {
+          "ruleId": "BH/code_quality/P1",
+          "level": "warning",
+          "message": {"text": "Duplicate retry logic across two files diverging in backoff policy"},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "src/acme_billing/retry.py"},
+                "region": {"startLine": 8}
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.78,
+            "lens": "code_quality",
+            "severity": "P1",
+            "why_it_matters": "billing.py reimplements the same loop with backoff=1.5 and max_attempts=5. Two retry behaviors for the same kind of failure invites silent inconsistency.",
+            "verifier_note": "Both fragments verified verbatim in the bundle. Severity P1 supported."
+          }
+        },
+        {
+          "ruleId": "BH/governance/P1",
+          "level": "warning",
+          "message": {"text": "rubric.json has no version field"},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "rubric.json"},
+                "region": {"startLine": 1}
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.95,
+            "lens": "governance",
+            "severity": "P1",
+            "why_it_matters": "Policy-bearing artifacts must be versioned so any audit decision can be reconstructed against the rubric that produced it.",
+            "verifier_note": "Authoritative section confirmed no version field. P1 — exactly the rubric-versioning gap the governance lens is calibrated to catch."
+          }
+        },
+        {
+          "ruleId": "BH/drift/P1",
+          "level": "warning",
+          "message": {"text": "README documents --debug flag, not parsed in CLI"},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "README.md"},
+                "region": {"startLine": 42}
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.83,
+            "lens": "drift",
+            "severity": "P1",
+            "why_it_matters": "A user copies the README example, the flag is rejected, they assume the docs are stale. Trust in documentation degrades.",
+            "verifier_note": "Confirmed via file listing — no other add_argument calls exist outside main.py. Keep."
+          }
+        },
+        {
+          "ruleId": "BH/blind_spot/P1",
+          "level": "warning",
+          "message": {"text": "PII (customer email) logged at INFO level in observability stream (data x observability)"},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "src/acme_billing/logs.py"},
+                "region": {"startLine": 13}
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.81,
+            "lens": "blind_spot",
+            "severity": "P1",
+            "why_it_matters": "Meta-intersection issue: data lens audits payload shape; observability lens audits log levels. Neither alone flags PII in INFO logs.",
+            "verifier_note": "Spans (observability x data shape). Evidence verbatim. P1 stands."
+          }
+        },
+        {
+          "ruleId": "BH/drift/P2",
+          "level": "note",
+          "message": {"text": "14 TODO/FIXME markers across 9 files, 0 paydown commits in last 30 entries"},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "src/acme_billing/"},
+                "region": {"startLine": 1}
+              }
+            }
+          ],
+          "properties": {
+            "confidence": 0.62,
+            "lens": "drift",
+            "severity": "P2",
+            "why_it_matters": "TODOs accumulating without paydown commits indicates the team has stopped pruning intent. Slow drift signal.",
+            "verifier_note": "TODO count verified. No commits mention TODO closure. P2 — informational."
+          }
+        }
+      ],
+      "originalUriBaseIds": {
+        "%SRCROOT%": {"uri": "file:///acme-billing-api/"}
+      }
+    }
+  ]
+}

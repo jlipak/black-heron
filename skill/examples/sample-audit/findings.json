@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0.0",
+  "black_heron_version": "1.0.0-skill",
+  "generated_at_utc": "2026-05-22T09:15:00Z",
+  "repo": {
+    "path": "acme-billing-api",
+    "file_count": 14,
+    "primary_language": "python",
+    "todo_count": 14,
+    "entry_points_loaded": [
+      "pyproject.toml",
+      "src/acme_billing/__init__.py",
+      "src/acme_billing/main.py",
+      "rubric.json"
+    ]
+  },
+  "lens_raw_counts": {
+    "code_quality": 2,
+    "governance": 3,
+    "drift": 2,
+    "blind_spot": 1
+  },
+  "verifier": {
+    "verified_count": 6,
+    "rejected_count": 2,
+    "model": "claude-opus-4-7",
+    "same_model_as_lens": false
+  },
+  "verified": [
+    {
+      "lens": "governance",
+      "severity": "P0",
+      "file": "src/acme_billing/main.py",
+      "lines": "L18-L22",
+      "claim": "ANTHROPIC_API_KEY referenced directly in source without .env.example schema documentation",
+      "evidence": "import os\nANTHROPIC_KEY = os.environ[\"ANTHROPIC_API_KEY\"]  # fails loud if missing\nclient = Anthropic(api_key=ANTHROPIC_KEY)",
+      "why_it_matters": "A new contributor cloning the repo sees the key reference but has no scaffolded .env.example to know which env vars are required.",
+      "confidence": 0.92,
+      "verifier_note": "Confirmed via file listing: no .env.example in repo. The env var is required at module-load time, so the failure surface is large. P0 stands."
+    },
+    {
+      "lens": "code_quality",
+      "severity": "P1",
+      "file": "src/acme_billing/retry.py",
+      "lines": "L8-L24",
+      "claim": "Duplicate retry logic across two files diverging in backoff policy",
+      "evidence": "def with_retry(fn, max_attempts=3, backoff=2.0):\n    for attempt in range(max_attempts):\n        try:\n            return fn()\n        except Exception:\n            time.sleep(backoff ** attempt)",
+      "why_it_matters": "billing.py reimplements the same loop with backoff=1.5 and max_attempts=5. Two retry behaviors for the same kind of failure invites silent inconsistency.",
+      "confidence": 0.78,
+      "verifier_note": "Both fragments verified verbatim in the bundle. Severity P1 supported — duplication of a control-flow primitive with diverging defaults is exactly the maintainability erosion the lens flags."
+    },
+    {
+      "lens": "governance",
+      "severity": "P1",
+      "file": "rubric.json",
+      "lines": "L1-L8",
+      "claim": "rubric.json has no version field",
+      "evidence": "{\n  \"criteria\": [\n    {\"id\": \"C1\", \"name\": \"transaction has merchant id\", \"severity\": \"P0\"},\n    {\"id\": \"C2\", \"name\": \"amount in expected range\", \"severity\": \"P1\"}\n  ]\n}",
+      "why_it_matters": "Policy-bearing artifacts must be versioned so any audit decision can be reconstructed against the rubric that produced it.",
+      "confidence": 0.95,
+      "verifier_note": "Authoritative section (entry-point full content) confirmed no version field. P1 — exactly the rubric-versioning gap the governance lens is calibrated to catch."
+    },
+    {
+      "lens": "drift",
+      "severity": "P1",
+      "file": "README.md",
+      "lines": "L42",
+      "claim": "README documents --debug flag, not parsed in CLI",
+      "evidence": "README.md L42:  ./acme-billing-api --debug   # verbose mode\nmain.py L31:    parser.add_argument(\"--port\", type=int, default=8080)\nmain.py L37:    parser.add_argument(\"--config\", type=Path, default=None)",
+      "why_it_matters": "A user copies the README example, the flag is rejected, they assume the docs are stale. Trust in documentation degrades.",
+      "confidence": 0.83,
+      "verifier_note": "Confirmed via file listing — no other add_argument calls exist outside main.py. The README claim is observable drift, not roadmap aspiration. Keep."
+    },
+    {
+      "lens": "blind_spot",
+      "severity": "P1",
+      "file": "src/acme_billing/logs.py",
+      "lines": "L13-L16",
+      "claim": "PII (customer email) logged at INFO level in observability stream (data x observability)",
+      "evidence": "def log_charge(customer_email: str, amount: float, currency: str):\n    logger.info(f\"Charged {customer_email}: {amount} {currency}\")",
+      "why_it_matters": "Meta-intersection issue: data lens audits payload shape; observability lens audits log levels. Neither alone flags PII in INFO logs, but together it is a GDPR Art. 5 trigger.",
+      "confidence": 0.81,
+      "verifier_note": "Spans (observability x data shape). Evidence verbatim. P1 stands — would be P0 if logs were shipped to third-party SIEM (no evidence of that here)."
+    },
+    {
+      "lens": "drift",
+      "severity": "P2",
+      "file": "src/acme_billing/",
+      "lines": "commits",
+      "claim": "14 TODO/FIXME markers across 9 files, 0 paydown commits in last 30 entries",
+      "evidence": "src/acme_billing/billing.py:23: # TODO: handle currency conversion (Q3)\nsrc/acme_billing/api.py:88:    # FIXME: rate-limit logic is too aggressive\nsrc/acme_billing/auth.py:14:   # TODO: rotate keys quarterly",
+      "why_it_matters": "TODOs accumulating without paydown commits indicates the team has stopped pruning intent. Slow drift signal.",
+      "confidence": 0.62,
+      "verifier_note": "TODO count verified (14 across 9 files via grep). No commits in git log mention TODO closure. P2 — informational."
+    }
+  ],
+  "rejected": [
+    {
+      "claim": "Hardcoded port number 8080 in main.py",
+      "reason": "This is a CLI default with --port override, not a hardcoded value (lens conflated default-arg with hardcode)."
+    },
+    {
+      "claim": "Missing CHANGELOG.md",
+      "reason": "Opinion-only finding, no evidence of broken semver promise; not in code_quality's scope for v1.0."
+    }
+  ]
+}

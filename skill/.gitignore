@@ -1,0 +1,29 @@
+# Audit outputs — never commit them into the skill repo itself.
+# (Within a user's project that uses BH, the user decides whether to commit `audit/`.)
+audit/
+
+# Temp files
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor metadata
+.idea/
+.vscode/
+*.iml
+
+# Python (in case a contributor runs the skill against the skill repo while developing)
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node (same reason)
+node_modules/

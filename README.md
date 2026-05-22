@@ -3,6 +3,24 @@
 > Multi-lens, governance-first repository audit agent with an adversarial verifier.
 > **v1.3.3** — 4 lenses + adversarial Opus verifier, evidence-presence pre-check, versioned rubric, SARIF output, parallel lens execution, code-writing suggest mode, external MCP enrichment (context7 / sequential-thinking / firecrawl / playwright), **deterministic baseline drift** (`--baseline previous.json`), **content-hash cache** across CLI + MCP server paths (`--no-cache` to bypass), and a **drop-in GitHub Actions workflow** (`.github/workflows/black-heron.yml`).
 
+## Distributions
+
+This repository ships Black Heron in **two distributions**:
+
+| | Python CLI (this root) | Claude Code Skill ([`/skill/`](skill/)) |
+|---|---|---|
+| **Form** | Pip-installable Python package + CLI + MCP server | Markdown-only skill, Karpathy-style |
+| **Install** | `pip install -e .` (Python 3.11+) | `git clone ... && cp -r skill .claude/skills/bh` (30 sec) |
+| **Determinism** | Deterministic JSON/SARIF shape per run | Lens output may vary slightly per run |
+| **Caching** | Content-hash cache across CLI + MCP server | None (Claude Code response not keyed) |
+| **Drift mode** | Yes (`--baseline previous.json`) | No |
+| **Test coverage** | 103 pytest tests | 0 (logic lives in prompts) |
+| **CI/CD** | Clean (`pip install` + `upload-sarif`) | Awkward (CI would need to run Claude Code) |
+| **Customization** | Edit Python + reinstall | Edit `.md` files |
+| **Best for** | Production CI/CD, audit-over-time, ops dashboards | Quick audits, prompt iteration, team experimentation |
+
+Both ship the **same four lens prompts, same `LAW.md`, same adversarial-verifier discipline.** The Python edition is the same agent with a deterministic shell around it. See [`skill/README.md`](skill/README.md) for the skill distribution's install path and trade-off detail.
+
 ```
        ___
       ( o>          " spread a wide cover,
