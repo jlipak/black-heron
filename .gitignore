@@ -37,3 +37,7 @@ audit/
 audit_output/
 audit-*/
 .bh-audit/
+
+# Session state (local-only, not artifact)
+MEMORY.md
+SESSION-DIGEST.md

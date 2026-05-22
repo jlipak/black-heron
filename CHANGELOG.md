@@ -98,7 +98,7 @@ The "baseline drift" release. Phase R: Black Heron now answers "what changed sin
 - On skip, prints `Drift baseline skipped: <reason>` and audit continues
 
 ### Added — REPORT.md "Drift since baseline" section + findings.json `baseline_diff` field
-- Rendered immediately after the volume-calibrated Summary so Marko sees it before scrolling
+- Rendered immediately after the volume-calibrated Summary so the reader sees it before scrolling
 - Bucket-count table + per-bucket subsections (`### New findings`, `### Closed findings`, `### Drifted findings`)
 - **Compliance debt signal** callout when P0/P1 findings persist — each persisting high-severity finding is one audit cycle of unfixed risk
 - **Closed-findings note** flags Apollo-reverse risk: closed without commit evidence may indicate masking rather than fixing
