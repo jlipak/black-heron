@@ -87,12 +87,12 @@ Even when raw lens output is empty. Verifier confirms emptiness. No exceptions.
 - `tests/test_report.py` — SARIF schema validation
 - `tests/test_rubric.py` — load + validate
 
-### What tests we have NOW (v1.1 in progress)
+### What tests we have now
 - Smoke tests via real audits on a reference repo (manual)
 - Self-audit (post Phase I)
 
 ### Honest gap
-Unit tests landed in v1.2 (`tests/`, 103 tests). Remaining gaps are in `docs/KNOWN_LIMITATIONS.md`.
+Unit tests landed in v1.2 (`tests/`, 109 tests as of 1.4.0). Remaining gaps are in `docs/KNOWN_LIMITATIONS.md`.
 
 ## Cross-References
 

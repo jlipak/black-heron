@@ -75,7 +75,7 @@ Pick 3 claims from CLAUDE.md / MEMORY.md / SESSION-DIGEST.md and verify against 
 | Claim | How to verify |
 |---|---|
 | "Phase X complete" | `ls` the files Phase X created |
-| "v1.1.0" in pyproject.toml | `grep '^version' pyproject.toml` |
+| version in pyproject.toml matches the top CHANGELOG entry | `grep '^version' pyproject.toml` |
 | "Cost so far: $X.XX" | Sum from `~/.black-heron/sessions/*.json` if exists |
 
 If any claim is wrong: FIX NOW, same commit. Stale docs are hallucinations (EZEKIEL S30).

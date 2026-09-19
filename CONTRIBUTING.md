@@ -37,9 +37,9 @@ Slim guide. Mostly: read `docs/LAW.md`, follow the 15 sacred laws.
 - See `.claude/rules/python.md` for style details.
 - Comments: minimal. Only when WHY is non-obvious. Never explain WHAT well-named code already does.
 
-## Tests (when we have them, v1.2)
+## Tests
 
-Currently BH has no unit tests — smoke audits + self-audit cover validation. v1.2 will add `tests/` with pytest. PRs that add code should not be blocked on adding tests until the test infrastructure lands.
+`tests/` holds 109 pytest tests that never call the API (`pytest -q`, also run by CI on Python 3.11 and 3.12). A change to deterministic code (discovery, evidence check, cost, cache, drift, rubric, model policy) comes with a test; a change to a lens prompt comes with a self-audit note instead, because prompt behaviour is not unit-testable.
 
 ## Filing issues
 

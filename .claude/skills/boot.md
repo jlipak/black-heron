@@ -49,7 +49,7 @@ For each "Current State" claim in MEMORY.md:
 ┌─────────────────────────────────────────────────────────┐
 │  BLACK HERON — Session [N+1]                            │
 ├──────────────┬──────────────────────────────────────────┤
-│ Version      │ v1.1.0 (in progress)                     │
+│ Version      │ [grep '^version' pyproject.toml]         │
 │ Last session │ [date from SESSION-DIGEST.md]            │
 │ Models       │ Opus 4.6 (lens) / Opus 4.7 (verifier)   │
 │ Cumulative   │ N audits, $X.XX total spend             │

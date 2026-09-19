@@ -1,4 +1,4 @@
-# Architecture — Black Heron v1.1
+# Architecture — Black Heron v1.4
 
 Technical deep dive. Companion to `README.md` (public) and `docs/PHILOSOPHY.md` (rationale).
 
@@ -99,9 +99,9 @@ src/black_heron/
 | 4 lenses | `claude-opus-4-8` | Previous Opus checkpoint; strong structured-output lens work at $5 / $25 per MTok. |
 | Verifier | `claude-opus-5` | Current Opus, different checkpoint than lenses → different blind spots (Apollo lesson) |
 | Fallback | `claude-sonnet-5` | `--budget-mode` only (lenses; the verifier stays on Opus). Default never engages Sonnet. |
-| Helper | N/A in v1.1 | Haiku is not used. |
+| Helper | none | Haiku is not used. |
 
-Cost per audit at v1.1 defaults: ~$1.50-3.00 depending on repo size + entry-point count. Cache_control: ephemeral on lens system prompts provides ~30% reduction within a single audit (lens 2-4 share cache from lens 1).
+Cost per audit at the 1.4.0 defaults has not been measured yet; the v1.0 showcase run (57 files) repriced at the 1.4.0 table comes to about $0.96. Cache_control: ephemeral on lens system prompts provides ~30% reduction within a single audit (lens 2-4 share cache from lens 1).
 
 ## Pydantic schemas (load-bearing)
 

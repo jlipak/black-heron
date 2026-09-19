@@ -99,7 +99,7 @@ on:
 
 # Restores ~/.black-heron/cache between runs (actions/cache@v4).
 # Key invalidates on rubric change so cache stays honest.
-key: bh-cache-${{ runner.os }}-v1.3.3-${{ hashFiles('rubric*.json') }}
+key: bh-cache-${{ runner.os }}-v1.4.0-${{ hashFiles('rubric*.json') }}
 ```
 
 What each run does:

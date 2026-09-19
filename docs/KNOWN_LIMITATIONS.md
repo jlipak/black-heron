@@ -1,6 +1,6 @@
 # Known Limitations — Black Heron v1.0
 
-Honest documentation of what Black Heron does *not* do yet, what known failure modes exist, and what v1.1 is targeting. Apollo-grade self-audit: a tool that audits other repos must also audit itself.
+Honest documentation of what Black Heron does *not* do yet, what known failure modes exist, and which of those later releases resolved (marked inline). Apollo-grade self-audit: a tool that audits other repos must also audit itself.
 
 ## v1.0 design boundaries (will not change in this version)
 
@@ -8,11 +8,11 @@ Honest documentation of what Black Heron does *not* do yet, what known failure m
 
 2. **Entry-point detection is pattern-based.** The `_detect_entry_role` function in `discovery.py` recognises `package.json`, `tsconfig.json`, `index.ts`, `__init__.py`, `main.py`, server entry-points, build configs, and `*.rubric.json` style policy files. Custom entry-points (e.g. a project that puts its bootstrap in `core/bootstrap.py`) are not recognised without rubric customization. v1.1 candidate: rubric-driven entry-point patterns.
 
-3. **No multi-lens parallelism.** Lenses run sequentially. On a 116-file repo this is ~4 minutes wall time. Async parallel execution is v1.1.
+3. **No multi-lens parallelism.** *(resolved in 1.2: `--parallel`, on by default)* Lenses run sequentially. On a 116-file repo this is ~4 minutes wall time. Async parallel execution is v1.1.
 
-4. **No baseline persistence.** Each run is fresh. v1.1 candidate: `--baseline previous.json` for drift-over-time comparison.
+4. **No baseline persistence.** *(resolved in 1.3.1: `--baseline previous.json`)* Each run is fresh. v1.1 candidate: `--baseline previous.json` for drift-over-time comparison.
 
-5. **No content-hash caching.** Re-running on an unchanged repo costs the same as the first run. Note: in-API prompt caching IS enabled (`cache_control: ephemeral`), so within a single audit, subsequent lenses share the system prompt cache. Cross-audit caching is v1.1.
+5. **No content-hash caching.** *(resolved in 1.3.2, extended to the MCP server in 1.3.3)* Re-running on an unchanged repo costs the same as the first run. Note: in-API prompt caching IS enabled (`cache_control: ephemeral`), so within a single audit, subsequent lenses share the system prompt cache. Cross-audit caching is v1.1.
 
 6. **Verifier uses 16K max_tokens.** Adequate for 40-finding audits. Very large repos may produce more findings than fit; the lens kill-switch (50 P0/P1 cap) catches this case but verifier output may still truncate on edge cases. Workaround: split lenses across multiple runs.
 
