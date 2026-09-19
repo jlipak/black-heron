@@ -42,7 +42,7 @@ jobs:
           python-version: "3.11"
 
       - name: Cache Black Heron content-hash cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.black-heron/cache
           # Key invalidates when the rubric or any lens prompt changes.
