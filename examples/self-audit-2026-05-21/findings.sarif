@@ -7,7 +7,7 @@
         "driver": {
           "name": "Black Heron",
           "version": "1.0.0",
-          "informationUri": "https://github.com/lipakjosip442-png/black-heron",
+          "informationUri": "https://github.com/jlipak/black-heron",
           "rules": [
             {
               "id": "BH/code_quality/P2",
@@ -228,7 +228,7 @@
       ],
       "originalUriBaseIds": {
         "%SRCROOT%": {
-          "uri": "file:///C:/Users/DOBY/Desktop/black-heron/"
+          "uri": "file:///workspace/black-heron/"
         }
       }
     }

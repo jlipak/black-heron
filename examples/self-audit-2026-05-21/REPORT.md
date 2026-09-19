@@ -2,7 +2,7 @@
 
 > Generated 2026-05-21 17:35 UTC by Black Heron v1.0.0
 
-**Repository:** `C:\Users\DOBY\Desktop\black-heron`
+**Repository:** `./black-heron`
 **Files audited:** 57 (primary language: Python)
 **TODO markers found in source:** 22
 **Entry-point files loaded full-content:** 4 (pyproject.toml, src/black_heron/cli.py, src/black_heron/__init__.py, src/black_heron/lenses/__init__.py)
