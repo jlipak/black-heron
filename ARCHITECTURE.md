@@ -96,9 +96,9 @@ src/black_heron/
 
 | Component | Model | Rationale |
 |---|---|---|
-| 4 lenses | `claude-opus-4-6` | Capability sufficient for structured-output lens work. Cheaper Opus tier. |
-| Verifier | `claude-opus-4-7` | Latest model, different checkpoint than lenses → different blind spots (Apollo lesson) |
-| Fallback | `claude-sonnet-4-6` | `--budget-mode` only. Default never engages Sonnet. |
+| 4 lenses | `claude-opus-4-8` | Previous Opus checkpoint; strong structured-output lens work at $5 / $25 per MTok. |
+| Verifier | `claude-opus-5` | Current Opus, different checkpoint than lenses → different blind spots (Apollo lesson) |
+| Fallback | `claude-sonnet-5` | `--budget-mode` only (lenses; the verifier stays on Opus). Default never engages Sonnet. |
 | Helper | N/A in v1.1 | Haiku is not used. |
 
 Cost per audit at v1.1 defaults: ~$1.50-3.00 depending on repo size + entry-point count. Cache_control: ephemeral on lens system prompts provides ~30% reduction within a single audit (lens 2-4 share cache from lens 1).

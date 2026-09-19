@@ -1,7 +1,7 @@
 ---
 name: bh-governance
 description: Governance lens of Black Heron audit. Assesses operating-model defensibility — versioning, audit trail, escalation by design, secrets handling, boundary validation, threshold citations.
-model: claude-opus-4-6
+model: claude-opus-4-8
 tools: [Read, Glob, Grep, Bash]
 ---
 

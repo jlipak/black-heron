@@ -1,7 +1,7 @@
 ---
 name: bh-code-quality
 description: Code-quality lens of Black Heron audit. Senior-PR-review issues, patterns across files, security smells. Has Read/Glob/Grep tools — can verify any claim before raising.
-model: claude-opus-4-6
+model: claude-opus-4-8
 tools: [Read, Glob, Grep, Bash]
 ---
 

@@ -3,16 +3,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-# Token costs in USD per 1M tokens (snapshot 2026-05; verify before re-pricing)
-# Conservative, slightly high — better to over-estimate cost than under.
+# Token costs in USD per 1M tokens, Anthropic first-party rates as of 2026-09-19
+# (verify against the current price list before re-pricing).
+# Cache read = 0.1x input; cache write = 1.25x input (5-minute TTL).
 PRICES = {
-    "claude-opus-4-6": {"input": 15.0, "output": 75.0, "cache_read": 1.50, "cache_write": 18.75},
-    "claude-opus-4-7": {"input": 15.0, "output": 75.0, "cache_read": 1.50, "cache_write": 18.75},
+    "claude-opus-5": {"input": 5.0, "output": 25.0, "cache_read": 0.50, "cache_write": 6.25},
+    "claude-opus-4-8": {"input": 5.0, "output": 25.0, "cache_read": 0.50, "cache_write": 6.25},
+    "claude-opus-4-7": {"input": 5.0, "output": 25.0, "cache_read": 0.50, "cache_write": 6.25},
+    "claude-opus-4-6": {"input": 5.0, "output": 25.0, "cache_read": 0.50, "cache_write": 6.25},
+    "claude-sonnet-5": {"input": 2.0, "output": 10.0, "cache_read": 0.20, "cache_write": 2.50},
     "claude-sonnet-4-6": {"input": 3.0, "output": 15.0, "cache_read": 0.30, "cache_write": 3.75},
-    "claude-sonnet-4-5": {"input": 3.0, "output": 15.0, "cache_read": 0.30, "cache_write": 3.75},
+    "claude-haiku-4-5": {"input": 1.0, "output": 5.0, "cache_read": 0.10, "cache_write": 1.25},
 }
 
-DEFAULT_PRICE = {"input": 15.0, "output": 75.0, "cache_read": 1.50, "cache_write": 18.75}
+# Unknown model id: bill at the dearest tier so a typo never under-reports spend.
+DEFAULT_PRICE = {"input": 10.0, "output": 50.0, "cache_read": 1.00, "cache_write": 12.50}
 
 
 @dataclass

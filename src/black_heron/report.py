@@ -5,12 +5,13 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+from . import __version__
 from ._models import RepoContext
 from .synthesis import VerifierResult
 
 SEVERITY_ORDER = {"P0": 0, "P1": 1, "P2": 2}
 SARIF_LEVEL = {"P0": "error", "P1": "warning", "P2": "note"}
-BLACK_HERON_VERSION = "1.3.3"
+BLACK_HERON_VERSION = __version__
 
 
 def write_report(

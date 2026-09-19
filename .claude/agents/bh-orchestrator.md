@@ -1,7 +1,7 @@
 ---
 name: bh-orchestrator
 description: Black Heron audit orchestrator. Dispatches the 4 lens sub-agents in true parallel, collects findings, dispatches the verifier sub-agent, writes the three output files. Use this when running BH audit from inside a Claude Code session (agentic mode), instead of the CLI.
-model: claude-opus-4-6
+model: claude-opus-4-8
 tools: [Read, Glob, Grep, Bash, Agent]
 ---
 
@@ -59,8 +59,8 @@ After verifier returns: write REPORT.md + findings.json + findings.sarif. Use `B
 
 # Cost discipline
 
-- Each lens sub-agent: ~$0.15-0.25 (Opus 4.6)
-- Verifier sub-agent: ~$0.30-0.50 (Opus 4.7)
+- Each lens sub-agent: ~$0.05-0.10 (Opus 4.8)
+- Verifier sub-agent: ~$0.10-0.20 (Opus 5)
 - Total: ~$1-2 per agentic-mode audit
 - Compare to CLI mode (~$1) — slight premium for tool-access verification
 

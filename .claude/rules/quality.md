@@ -24,8 +24,8 @@
 Even when raw lens output is empty. Verifier confirms emptiness. No exceptions.
 
 ### Different model than lens (Law VIII)
-- Lenses: `claude-opus-4-6`.
-- Verifier: `claude-opus-4-7`.
+- Lenses: `claude-opus-4-8`.
+- Verifier: `claude-opus-5`.
 - Same model = shared blind spots (Apollo audit lesson).
 
 ### Evidence presence check (Law I)

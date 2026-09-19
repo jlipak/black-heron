@@ -13,8 +13,8 @@ This is the spec for the `REPORT.md` file Black Heron writes at the end of an au
 **Files audited:** <N> (primary language: <language>)
 **TODO markers found in source:** <N>
 **Entry-point files loaded full-content:** <N> (<list>)
-**Lens model:** <lens model id, e.g., claude-opus-4-6>
-**Verifier model:** <verifier model id, e.g., claude-opus-4-7> *(if same as lens, note "same model — quality risk")*
+**Lens model:** <lens model id, e.g., claude-opus-4-8>
+**Verifier model:** <verifier model id, e.g., claude-opus-5> *(if same as lens, note "same model — quality risk")*
 
 ## Summary
 

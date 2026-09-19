@@ -39,7 +39,7 @@ class Finding(BaseModel):
 ### Anthropic SDK calls
 ```python
 response = client.messages.create(
-    model=MODEL,                                          # claude-opus-4-6 or claude-opus-4-7 only
+    model=MODEL,                                          # claude-opus-4-8 (lens) or claude-opus-5 (verifier)
     max_tokens=16384,                                     # generous for verifier; lens uses 4096
     system=[{
         "type": "text",

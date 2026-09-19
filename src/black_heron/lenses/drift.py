@@ -8,7 +8,7 @@ from ..cost_tracker import CostTracker, record_response
 from ._common import build_repo_prompt, parse_findings
 
 LENS_NAME = "drift"
-MODEL = "claude-opus-4-6"
+MODEL = "claude-opus-4-8"
 
 SYSTEM = """You are the drift lens of the Black Heron repository audit.
 
@@ -42,15 +42,21 @@ Output ONE JSON object exactly. Schema same as code_quality lens, with `lens: "d
 """
 
 
-def run(ctx: RepoContext, client: anthropic.Anthropic, tracker: CostTracker | None = None) -> list[Finding]:
+def run(
+    ctx: RepoContext,
+    client: anthropic.Anthropic,
+    tracker: CostTracker | None = None,
+    model: str | None = None,
+) -> list[Finding]:
+    model = model or MODEL
     user = build_repo_prompt(ctx)
     response = client.messages.create(
-        model=MODEL,
+        model=model,
         max_tokens=4096,
         system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": user}],
     )
     if tracker is not None:
-        record_response(tracker, response, model=MODEL, lens_name=LENS_NAME)
+        record_response(tracker, response, model=model, lens_name=LENS_NAME)
     text = "".join(getattr(b, "text", "") for b in response.content)
     return parse_findings(text, LENS_NAME)

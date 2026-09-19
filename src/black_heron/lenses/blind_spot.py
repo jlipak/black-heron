@@ -13,7 +13,7 @@ from ..cost_tracker import CostTracker, record_response
 from ._common import build_repo_prompt, parse_findings
 
 LENS_NAME = "blind_spot"
-MODEL = "claude-opus-4-6"
+MODEL = "claude-opus-4-8"
 
 SYSTEM = """You are the blind-spot lens of the Black Heron repository audit. You run LAST, after code_quality, governance, and drift have already produced findings.
 
@@ -55,19 +55,21 @@ def run(
     findings_so_far: list[Finding],
     client: anthropic.Anthropic,
     tracker: CostTracker | None = None,
+    model: str | None = None,
 ) -> list[Finding]:
+    model = model or MODEL
     base = build_repo_prompt(ctx)
     findings_block = _render_prior_findings(findings_so_far)
     user = f"{base}\n\n## Findings produced by other lenses (do NOT duplicate)\n\n{findings_block}"
 
     response = client.messages.create(
-        model=MODEL,
+        model=model,
         max_tokens=4096,
         system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": user}],
     )
     if tracker is not None:
-        record_response(tracker, response, model=MODEL, lens_name=LENS_NAME)
+        record_response(tracker, response, model=model, lens_name=LENS_NAME)
     text = "".join(getattr(b, "text", "") for b in response.content)
     return parse_findings(text, LENS_NAME)
 

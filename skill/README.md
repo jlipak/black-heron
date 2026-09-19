@@ -172,7 +172,7 @@ The skill is fully transparent. There's no hidden state — what Claude Code see
 | | This skill | Python Black Heron |
 |---|---|---|
 | Install | `git clone` (30 sec) | `pip install -e .` (5-15 min + Python 3.11) |
-| Vendor | Any model Claude Code supports | Anthropic only (`claude-opus-4-6` / `4-7`) |
+| Vendor | Any model Claude Code supports | Anthropic only (`claude-opus-4-8` / `claude-opus-5`) |
 | Determinism | Lens output may vary slightly per run | Same deterministic SARIF/JSON shape per run |
 | Test coverage | 0 tests (logic lives in prompts) | 103 pytest tests |
 | Content-hash cache | No (Claude Code's response isn't keyed by repo state) | Yes (`--no-cache` to bypass) |

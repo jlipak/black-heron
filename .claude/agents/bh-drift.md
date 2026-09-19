@@ -1,7 +1,7 @@
 ---
 name: bh-drift
 description: Drift lens of Black Heron audit. Promise-vs-delivery signals — TODO accumulation, commits that reference missing artifacts, README claims that contradict code, version-number contradictions, stale doc references.
-model: claude-opus-4-6
+model: claude-opus-4-8
 tools: [Read, Glob, Grep, Bash]
 ---
 

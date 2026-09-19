@@ -1,7 +1,7 @@
 ---
 name: bh-blind-spot
 description: Blind-spot lens of Black Heron audit. Runs LAST, after code_quality + governance + drift. Hunts meta-intersection issues that span 2+ domains and which single-lens checks miss by design. Apollo audit lesson — blind-spot hunter has highest marginal value.
-model: claude-opus-4-6
+model: claude-opus-4-8
 tools: [Read, Glob, Grep, Bash]
 ---
 

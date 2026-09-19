@@ -62,14 +62,14 @@ Lens prompts include the rule: "Only raise findings where cited evidence shows t
 ## VIII. ALWAYS RUN VERIFIER ON A DIFFERENT MODEL THAN THE LENS
 **Evidence base:** When lens and verifier are the same model with the same prompt structure, they share the same blind spots. Apollo lesson: "Generic agents trust each other and repeat the same analytical patterns."
 
-Lenses run on `claude-opus-4-6`. Verifier runs on `claude-opus-4-7`. Different model checkpoint = different training distribution = different blind spots. Model differential is a feature, not an artifact.
+Lenses run on `claude-opus-4-8`. Verifier runs on `claude-opus-5`. Different model checkpoint = different training distribution = different blind spots. Model differential is a feature, not an artifact.
 
 ---
 
 ## IX. NEVER USE HAIKU OR SONNET FOR SUBSTANTIVE REASONING
 **Evidence base:** Owner preference + AKIRA collapse documenting that cost-cutting on substance produces silent decay. Sonnet for lens work means cheaper audits AND lower-quality findings. The savings is illusory.
 
-`claude-opus-4-6` for lenses, `claude-opus-4-7` for verifier. `--budget-mode` flag is the **only** way to engage Sonnet, and the user opts in explicitly. Haiku is not configured anywhere in `rubric.default.json`.
+`claude-opus-4-8` for lenses, `claude-opus-5` for verifier. `--budget-mode` flag is the **only** way to engage Sonnet, and the user opts in explicitly. Haiku is not configured anywhere in `rubric.default.json`.
 
 ---
 

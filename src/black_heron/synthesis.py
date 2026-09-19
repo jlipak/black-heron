@@ -11,7 +11,7 @@ from ._models import Finding, RepoContext, Rubric
 from .cost_tracker import CostTracker, record_response
 from .evidence_verifier import check_evidence_in_context
 
-MODEL = "claude-opus-4-7"
+MODEL = "claude-opus-5"
 
 
 SYSTEM = """You are the adversarial verifier in the Black Heron audit pipeline.

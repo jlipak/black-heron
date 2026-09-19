@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 
+from . import __version__
 from .cache import (
     DEFAULT_CACHE_DIR,
     CacheStats,
@@ -35,6 +36,7 @@ from .mcp_consumers import ALL_ENRICHERS, load_mcp_config
 from .report import write_report
 from .rubric import load_rubric
 from .session import SessionRecord, session_id_now, utcnow_iso, write_session
+from .synthesis import MODEL as VERIFIER_MODEL
 from .synthesis import synthesize
 
 LENS_MODELS = {
@@ -44,10 +46,21 @@ LENS_MODELS = {
     "blind_spot": BLIND_SPOT_MODEL,
 }
 
+# Law IX: Sonnet only on explicit opt-in (--budget-mode). The verifier stays on Opus regardless.
+BUDGET_MODEL = "claude-sonnet-5"
+
+
+def resolve_lens_models(budget_mode: bool) -> dict[str, str]:
+    if budget_mode:
+        return {name: BUDGET_MODEL for name in LENS_MODELS}
+    return dict(LENS_MODELS)
+
+
 console = Console()
 
 
 @click.command()
+@click.version_option(__version__, "--version", prog_name="black-heron")
 @click.argument("repo_path", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option(
     "--lenses",
@@ -89,6 +102,13 @@ console = Console()
     "--parallel/--no-parallel",
     default=True,
     help="Run first-pass lenses (code_quality, governance, drift) in parallel via ThreadPoolExecutor. Default: enabled.",
+)
+@click.option(
+    "--budget-mode",
+    is_flag=True,
+    default=False,
+    help=f"Run the four lenses on {BUDGET_MODEL} instead of Opus. Cheaper, lower-quality findings; "
+         "the verifier stays on Opus. Off by default (Law IX).",
 )
 @click.option(
     "--enrich",
@@ -137,6 +157,7 @@ def audit(
     dry_run: bool,
     mode: str,
     parallel: bool,
+    budget_mode: bool,
     enrich_arg: str,
     mcp_config_path: Path | None,
     baseline_path: Path | None,
@@ -171,10 +192,13 @@ def audit(
         console.print(f"[yellow]Rubric disables[/yellow] lens(es): {disabled}")
         lens_list = enabled_in_rubric
 
+    lens_models = resolve_lens_models(budget_mode)
     console.print(Panel.fit(
-        f"[bold]Black Heron v1.3[/bold] — multi-lens repository audit\n"
+        f"[bold]Black Heron v{__version__}[/bold] — multi-lens repository audit\n"
         f"Repo: [cyan]{repo_path}[/cyan]\n"
         f"Lenses: {', '.join(lens_list)}\n"
+        f"Models: lenses {lens_models['code_quality']}{' (budget mode)' if budget_mode else ''} | "
+        f"verifier {VERIFIER_MODEL}\n"
         f"Enrich: {enrich_arg or 'none'}\n"
         f"Baseline: {baseline_path or 'none'}\n"
         f"Rubric: [magenta]{rubric.rubric_version}[/magenta] | "
@@ -262,13 +286,13 @@ def audit(
                 pool.submit(
                     run_lens_with_cache,
                     lens_name=name,
-                    lens_model=LENS_MODELS[name],
+                    lens_model=lens_models[name],
                     ctx_hash=ctx_hash,
                     rubric_version=rubric.rubric_version,
                     cache_dir=cache_dir,
                     cache_stats=cache_stats,
                     enabled=not no_cache,
-                    lens_call=(lambda n=name: ALL_LENSES[n](ctx, client, tracker)),
+                    lens_call=(lambda n=name: ALL_LENSES[n](ctx, client, tracker, model=lens_models[n])),
                 ): name
                 for name in first_pass
             }
@@ -299,13 +323,13 @@ def audit(
             with console.status(f"[bold]{name}[/bold] lens running..."):
                 findings = run_lens_with_cache(
                     lens_name=name,
-                    lens_model=LENS_MODELS[name],
+                    lens_model=lens_models[name],
                     ctx_hash=ctx_hash,
                     rubric_version=rubric.rubric_version,
                     cache_dir=cache_dir,
                     cache_stats=cache_stats,
                     enabled=not no_cache,
-                    lens_call=lambda n=name: ALL_LENSES[n](ctx, client, tracker),
+                    lens_call=lambda n=name: ALL_LENSES[n](ctx, client, tracker, model=lens_models[n]),
                 )
             lens_timings[name] = time.time() - t0
             raw_counts[name] = len(findings)
@@ -324,14 +348,16 @@ def audit(
             with console.status("[bold]blind_spot[/bold] lens running (reads other lenses' output)..."):
                 findings = run_lens_with_cache(
                     lens_name="blind_spot",
-                    lens_model=LENS_MODELS["blind_spot"],
+                    lens_model=lens_models["blind_spot"],
                     ctx_hash=ctx_hash,
                     rubric_version=rubric.rubric_version,
                     prior_findings_hash=prior_hash,
                     cache_dir=cache_dir,
                     cache_stats=cache_stats,
                     enabled=not no_cache,
-                    lens_call=lambda: run_blind_spot(ctx, all_findings, client, tracker),
+                    lens_call=lambda: run_blind_spot(
+                        ctx, all_findings, client, tracker, model=lens_models["blind_spot"]
+                    ),
                 )
             lens_timings["blind_spot"] = time.time() - t0
             raw_counts["blind_spot"] = len(findings)

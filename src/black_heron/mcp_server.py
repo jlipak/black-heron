@@ -18,6 +18,7 @@ from pathlib import Path
 import anthropic
 from dotenv import load_dotenv
 
+from . import __version__
 from ._models import Finding
 from .cache import (
     DEFAULT_CACHE_DIR,
@@ -46,7 +47,7 @@ LENS_MODELS = {
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "black-heron"
-SERVER_VERSION = "1.3.3"
+SERVER_VERSION = __version__
 
 
 TOOLS_DESCRIPTOR = [

@@ -22,7 +22,7 @@ black-heron /path/to/some/repo --out audit/
 cat audit/REPORT.md
 ```
 
-Expected: 2-5 minutes wall time, $0.50–$2.00 cost (Opus 4.6 lens + Opus 4.7 verifier), three artifacts in `audit/`.
+Expected: 2-5 minutes wall time, $0.30–$1.50 cost (Opus 4.8 lenses + Opus 5 verifier), three artifacts in `audit/`.
 
 ## Common workflows
 

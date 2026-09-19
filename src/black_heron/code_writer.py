@@ -28,8 +28,8 @@ import anthropic
 from ._models import SuggestedPatch
 from .cost_tracker import CostTracker, record_response
 
-WRITER_MODEL = "claude-opus-4-6"
-VERIFIER_MODEL = "claude-opus-4-7"
+WRITER_MODEL = "claude-opus-4-8"
+VERIFIER_MODEL = "claude-opus-5"
 
 WRITER_SYSTEM = """You are the code-writer of the Black Heron audit pipeline.
 
@@ -195,7 +195,7 @@ def _verify_patch(
 
     response = client.messages.create(
         model=VERIFIER_MODEL,
-        max_tokens=512,
+        max_tokens=4096,
         system=[{"type": "text", "text": VERIFIER_PATCH_SYSTEM, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": user}],
     )
