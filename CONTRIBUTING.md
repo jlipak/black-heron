@@ -1,6 +1,6 @@
 # Contributing — Black Heron
 
-Slim guide. Mostly: read `LAW.md`, follow the 15 sacred laws.
+Slim guide. Mostly: read `docs/LAW.md`, follow the 15 sacred laws.
 
 ## Before opening a PR
 
@@ -18,7 +18,7 @@ Slim guide. Mostly: read `LAW.md`, follow the 15 sacred laws.
 
 ## What changes need discussion
 
-- Changes to `LAW.md` (sacred laws are evidence-backed; new evidence needed)
+- Changes to `docs/LAW.md` (sacred laws are evidence-backed; new evidence needed)
 - Changes to severity confidence floors (Law X — bump `rubric_version`)
 - Changes to lens system prompts (must re-baseline FP rate)
 - New external dependencies in `pyproject.toml`
@@ -49,7 +49,7 @@ Currently BH has no unit tests — smoke audits + self-audit cover validation. v
 
 ## See also
 
-- `LAW.md` — sacred laws
+- `docs/LAW.md` — sacred laws
 - `ARCHITECTURE.md` — module layout + data flow
-- `OPERATIONS.md` — install + run
-- `KNOWN_LIMITATIONS.md` — gaps acknowledged
+- `docs/OPERATIONS.md` — install + run
+- `docs/KNOWN_LIMITATIONS.md` — gaps acknowledged

@@ -12,7 +12,7 @@ When SHIKA says `boot` or `bh`, run this sequence verbatim. Goal: pick up from l
 ```
 Read MEMORY.md
 Read SESSION-DIGEST.md
-Read LAW.md (if not in context — refresh on the 15 sacred laws)
+Read docs/LAW.md (if not in context — refresh on the 15 sacred laws)
 ```
 
 ## Step 2: Quick health check
@@ -76,5 +76,5 @@ Boot is for: identity, state, plan. Not for: code, internals, deep dives.
 
 - `MEMORY.md` — state read at boot
 - `SESSION-DIGEST.md` — previous-session handoff
-- `LAW.md` — sacred laws refresher
+- `docs/LAW.md` — sacred laws refresher
 - `wrap.md` skill — the inverse of boot, run at session end

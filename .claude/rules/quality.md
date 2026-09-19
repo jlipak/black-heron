@@ -70,7 +70,7 @@ Even when raw lens output is empty. Verifier confirms emptiness. No exceptions.
 
 ### Before any release (v1.x bump)
 ```
-- [ ] Self-audit clean (P0 = 0 or all documented in KNOWN_LIMITATIONS.md)
+- [ ] Self-audit clean (P0 = 0 or all documented in docs/KNOWN_LIMITATIONS.md)
 - [ ] CHANGELOG.md updated
 - [ ] README.md reflects new version
 - [ ] pyproject.toml version bumped
@@ -92,10 +92,10 @@ Even when raw lens output is empty. Verifier confirms emptiness. No exceptions.
 - Self-audit (post Phase I)
 
 ### Honest gap
-No automated unit tests yet. v1.2 priority. Documented in `KNOWN_LIMITATIONS.md`.
+Unit tests landed in v1.2 (`tests/`, 103 tests). Remaining gaps are in `docs/KNOWN_LIMITATIONS.md`.
 
 ## Cross-References
 
-- `LAW.md` Laws I, IV, V, VI, VII, VIII — codified here
-- `KNOWN_LIMITATIONS.md` — gaps
+- `docs/LAW.md` Laws I, IV, V, VI, VII, VIII — codified here
+- `docs/KNOWN_LIMITATIONS.md` — gaps
 - `core.md` — workflow context

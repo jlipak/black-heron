@@ -61,7 +61,7 @@ SessionEnd              uncommitted-warning.sh   (warn if dirty tree)
 
 ## Cross-References
 
-- `LAW.md` Laws XI, XII — codified here
+- `docs/LAW.md` Laws XI, XII — codified here
 - `core.md` — workflow context
 - `scripts/hooks/` — hook implementations (Phase C)
 - `.claude/settings.json` — hook registry (Phase C)

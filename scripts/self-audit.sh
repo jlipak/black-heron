@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Run Black Heron on its own source.
 # Output: examples/self-audit-<date>/REPORT.md + findings.json + findings.sarif
-# Plus: copy REPORT.md to top-level SELF-AUDIT-LATEST.md (commit-friendly).
 #
 # Portability: detects python3/python/py in that order. Loads ANTHROPIC_API_KEY
 # from $BH_ENV_FILE (if set) or $BH_ROOT/.env (if present). No hardcoded paths.
@@ -52,9 +51,8 @@ cd "$BH_ROOT"
 "$PY" -m black_heron.cli "$BH_ROOT" --out "$OUT_DIR"
 
 if [ -f "$OUT_DIR/REPORT.md" ]; then
-  cp "$OUT_DIR/REPORT.md" "$BH_ROOT/SELF-AUDIT-LATEST.md"
   echo ""
-  echo "Promoted REPORT.md → SELF-AUDIT-LATEST.md (commit this)"
+  echo "Self-audit written to $OUT_DIR (commit it as the showcase example)"
 else
   echo "WARN: no REPORT.md produced at $OUT_DIR" >&2
   exit 2

@@ -88,7 +88,7 @@ Config change > code change. 3 similar lines > premature abstraction. 1 file > 7
 
 ## Cross-References
 
-- `LAW.md` — full sacred laws
+- `docs/LAW.md` — full sacred laws
 - `MEMORY.md` — current state
 - `quality.md` — verification rules
 - `security.md` — secrets + push protocol

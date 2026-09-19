@@ -1,6 +1,6 @@
 # Architecture — Black Heron v1.1
 
-Technical deep dive. Companion to `README.md` (public) and `PHILOSOPHY.md` (rationale).
+Technical deep dive. Companion to `README.md` (public) and `docs/PHILOSOPHY.md` (rationale).
 
 ## System overview
 
@@ -203,7 +203,7 @@ This gives BH cross-session memory. After 10 audits, you can see your average FP
 ## Identity & discipline layer
 
 `CLAUDE.md` — identity, constraints, codebase map, validation commands.
-`LAW.md` — 15 sacred laws, each backed by a documented past failure (Apollo, QURE, AKIRA collapse).
+`docs/LAW.md` — 15 sacred laws, each backed by a documented past failure (Apollo, QURE, AKIRA collapse).
 `MEMORY.md` — operational state, NEXT list, calibration snapshot, 200-line hard cap.
 `SESSION-DIGEST.md` — last-session handoff, read first at next boot.
 `.claude/rules/{core,quality,security,python}.md` — behavioral rules per concern.
@@ -229,9 +229,9 @@ Higher cost (sub-agent overhead + tool roundtrips) but higher precision (lenses 
 ## See also
 
 - `README.md` — public-facing
-- `PHILOSOPHY.md` — design rationale, canopy-feeding metaphor
+- `docs/PHILOSOPHY.md` — design rationale, canopy-feeding metaphor
 - `CLAUDE.md` — identity + constraints
-- `LAW.md` — sacred laws
-- `OPERATIONS.md` — install + run procedures
-- `KNOWN_LIMITATIONS.md` — honest gaps
+- `docs/LAW.md` — sacred laws
+- `docs/OPERATIONS.md` — install + run procedures
+- `docs/KNOWN_LIMITATIONS.md` — honest gaps
 - `CHANGELOG.md` — version history

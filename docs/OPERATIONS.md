@@ -210,7 +210,7 @@ black-heron-verify --findings external-findings.json --repo /path/to/repo
 BH_ENV_FILE=~/.config/anthropic.env bash scripts/self-audit.sh
 ```
 
-Updates `SELF-AUDIT-LATEST.md` in the BH repo root. Commit it to ship transparency about BH's own state.
+Writes `examples/self-audit-<date>/`. Commit it to ship transparency about BH's own state.
 
 ## Install MCP server (Claude Code integration)
 

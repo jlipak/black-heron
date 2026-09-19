@@ -409,6 +409,6 @@ def _write_report_md(
         "entry-point full-content loading, versioned rubric, cost + time kill-switches, SARIF output, "
         "code-writing suggest mode, parallel lens execution, and external MCP enrichment "
         "(context7 / sequential-thinking / firecrawl / playwright). "
-        "Honest gaps documented in `KNOWN_LIMITATIONS.md`."
+        "Honest gaps documented in `docs/KNOWN_LIMITATIONS.md`."
     )
     path.write_text("\n".join(lines), encoding="utf-8")

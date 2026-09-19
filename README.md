@@ -19,7 +19,7 @@ This repository ships Black Heron in **two distributions**:
 | **Customization** | Edit Python + reinstall | Edit `.md` files |
 | **Best for** | Production CI/CD, audit-over-time, ops dashboards | Quick audits, prompt iteration, team experimentation |
 
-Both ship the **same four lens prompts, same `LAW.md`, same adversarial-verifier discipline.** The Python edition is the same agent with a deterministic shell around it. See [`skill/README.md`](skill/README.md) for the skill distribution's install path and trade-off detail.
+Both ship the **same four lens prompts, same `docs/LAW.md`, same adversarial-verifier discipline.** The Python edition is the same agent with a deterministic shell around it. See [`skill/README.md`](skill/README.md) for the skill distribution's install path and trade-off detail.
 
 ```
        ___
@@ -179,7 +179,7 @@ If raw findings exceed 50 P0+P1 entries on a single repo, the run aborts before 
 
 ## Honest scope (v1.0)
 
-See [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) for full self-audit. Headline gaps:
+See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) for full self-audit. Headline gaps:
 
 - **Sample-based context** for non-entry-point files. Lenses see up to 30 sample files at 4KB cap. Entry-points (index, manifest, config) are loaded full-content (10KB cap). Files outside both sets are visible only via the authoritative file listing.
 - **Sequential lens execution.** Async parallelism is v1.1.

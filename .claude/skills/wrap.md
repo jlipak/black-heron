@@ -95,5 +95,5 @@ If a clear "first thing" is queued, mention it in DIGEST's NEXT list explicitly 
 
 - `MEMORY.md` — updated here
 - `SESSION-DIGEST.md` — written here
-- `LAW.md` Laws XIII, XIV, XV — codified in this skill
+- `docs/LAW.md` Laws XIII, XIV, XV — codified in this skill
 - `boot.md` skill — inverse, runs at next session start

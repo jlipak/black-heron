@@ -13,7 +13,7 @@
 7. **ALWAYS cite cost** at the end of every audit. No hidden API spend.
 8. **ALWAYS preserve rejected findings** in `REPORT.md` and `findings.json`. Transparency demands the reader sees what was filtered.
 
-For the full set of 15 sacred laws with evidence and rationale, see `LAW.md`.
+For the full set of 15 sacred laws with evidence and rationale, see `docs/LAW.md`.
 
 ## Identity
 
@@ -59,12 +59,12 @@ If any of these five steps fails, the audit is **not done.** No "should work."
 | Path | Role | Phase |
 |---|---|---|
 | `CLAUDE.md` | This file. Identity + constraints. | always |
-| `LAW.md` | 15 sacred laws, evidence-backed. | always |
+| `docs/LAW.md` | 15 sacred laws, evidence-backed. | always |
 | `MEMORY.md` | Operational state, NEXT list (200-line cap). | always |
 | `SESSION-DIGEST.md` | Last-session handoff. | always |
 | `README.md` | Public-facing project doc. | always |
-| `KNOWN_LIMITATIONS.md` | Honest self-audit of gaps. | always |
-| `PHILOSOPHY.md` | Canopy-feeding metaphor + design principles. | always |
+| `docs/KNOWN_LIMITATIONS.md` | Honest self-audit of gaps. | always |
+| `docs/PHILOSOPHY.md` | Canopy-feeding metaphor + design principles. | always |
 | `pyproject.toml` | Python package config, v1.1.0. | always |
 | `rubric.default.json` | Bundled audit rubric (lives inside `src/black_heron/`). | always |
 | `src/black_heron/` | Core package. | Phase A+ |
@@ -117,7 +117,7 @@ bash scripts/install-hooks.sh
 - **Models in play:** Opus 4.6 (lenses), Opus 4.7 (verifier). Sonnet only via explicit `--budget-mode`.
 - **MCP servers BH itself consumes (when invoked from Claude Code):** sequential-thinking, playwright, context7, firecrawl.
 - **Cost per audit at v1.1 baseline:** ~$1.00 (4 lenses Opus 4.6 + verifier Opus 4.7, 5-min ephemeral cache).
-- **Last self-audit:** see `SELF-AUDIT-LATEST.md` (post Phase I).
+- **Last self-audit:** see `examples/self-audit-2026-05-21/`.
 
 ## Why Black Heron
 
@@ -131,9 +131,9 @@ No source citations in code or public docs name these origins. The vocabulary an
 
 ## Cross-References
 
-- `LAW.md` — sacred laws, evidence-backed
+- `docs/LAW.md` — sacred laws, evidence-backed
 - `MEMORY.md` — current operational state
 - `SESSION-DIGEST.md` — last session handoff
-- `PHILOSOPHY.md` — design rationale
-- `KNOWN_LIMITATIONS.md` — honest gaps
+- `docs/PHILOSOPHY.md` — design rationale
+- `docs/KNOWN_LIMITATIONS.md` — honest gaps
 - `README.md` — public-facing

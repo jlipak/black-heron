@@ -114,4 +114,4 @@ from ._models import Finding, RepoContext
 
 - `core.md` — workflow
 - `quality.md` — testing + verification
-- `LAW.md` — language-agnostic laws
+- `docs/LAW.md` — language-agnostic laws
