@@ -5,8 +5,6 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from black_heron._models import EntryPoint, Finding, RepoContext
 from black_heron.cache import (
     CACHE_FORMAT_VERSION,

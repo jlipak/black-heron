@@ -19,7 +19,6 @@ from ._base import BaseEnricher, EnrichmentReport
 from .client import McpClientError, McpInitializeError, McpToolError
 from .config import McpServerSpec
 
-
 _PYPROJECT_DEP_RE = re.compile(r'^\s*"?([A-Za-z0-9_.\-]+)"?\s*[=<>~!]', re.MULTILINE)
 _REQUIREMENTS_RE = re.compile(r"^\s*([A-Za-z0-9_.\-]+)", re.MULTILINE)
 

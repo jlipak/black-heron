@@ -18,7 +18,7 @@ from pathlib import Path
 import anthropic
 from dotenv import load_dotenv
 
-from ._models import Finding, Rubric
+from ._models import Finding
 from .cache import (
     DEFAULT_CACHE_DIR,
     CacheStats,
@@ -35,7 +35,7 @@ from .lenses.drift import MODEL as DRIFT_MODEL
 from .lenses.governance import MODEL as GOVERNANCE_MODEL
 from .report import write_report
 from .rubric import load_rubric
-from .synthesis import synthesize, VerifierResult
+from .synthesis import synthesize
 
 LENS_MODELS = {
     "code_quality": CODE_QUALITY_MODEL,

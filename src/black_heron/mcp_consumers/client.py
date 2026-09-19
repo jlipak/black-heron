@@ -75,7 +75,7 @@ class JsonRpcStdioClient:
 
     # ----- lifecycle ---------------------------------------------------------
 
-    def __enter__(self) -> "JsonRpcStdioClient":
+    def __enter__(self) -> JsonRpcStdioClient:
         self._spawn()
         return self
 

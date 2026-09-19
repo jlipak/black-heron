@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 
-from ._models import EntryPoint, Finding, RepoContext
+from ._models import Finding, RepoContext
 
 
 def _norm(s: str) -> str:

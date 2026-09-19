@@ -1,12 +1,11 @@
 """Black Heron CLI entry point."""
 from __future__ import annotations
 
-import json
 import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import anthropic
@@ -15,7 +14,6 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 
-from ._models import Rubric
 from .cache import (
     DEFAULT_CACHE_DIR,
     CacheStats,
@@ -415,7 +413,7 @@ def audit(
     sid = session_id_now()
     record = SessionRecord(
         session_id=sid,
-        started_at_utc=datetime.fromtimestamp(started_at, tz=timezone.utc).isoformat(),
+        started_at_utc=datetime.fromtimestamp(started_at, tz=UTC).isoformat(),
         ended_at_utc=utcnow_iso(),
         repo_path=str(repo_path),
         lenses_run=lens_list,

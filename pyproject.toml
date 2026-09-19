@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-mock>=3"]
+dev = ["pytest>=8", "pytest-mock>=3", "ruff>=0.5"]
 
 [project.scripts]
 black-heron = "black_heron.cli:audit"
@@ -31,3 +31,10 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP"]

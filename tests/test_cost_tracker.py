@@ -1,7 +1,7 @@
 """Tests for cost_tracker.py — price math, cap enforcement."""
 from __future__ import annotations
 
-from black_heron.cost_tracker import PRICES, CostTracker, DEFAULT_PRICE
+from black_heron.cost_tracker import DEFAULT_PRICE, PRICES, CostTracker
 
 
 def test_known_models_in_price_table() -> None:

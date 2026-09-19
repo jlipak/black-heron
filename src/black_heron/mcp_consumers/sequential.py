@@ -19,7 +19,6 @@ from ._base import BaseEnricher, EnrichmentReport
 from .client import McpClientError, McpInitializeError, McpToolError
 from .config import McpServerSpec
 
-
 _DEFAULT_PROMPT_TEMPLATE = (
     "You are reasoning step-by-step about a repository under audit by Black Heron.\n"
     "Repo: {path}\n"

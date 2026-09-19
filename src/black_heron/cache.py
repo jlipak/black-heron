@@ -21,7 +21,6 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from ._models import Finding, RepoContext
 
@@ -117,7 +116,7 @@ def read_cache(
     cache_dir: Path,
     cache_key: str,
     lens_name: str,
-) -> Optional[list[dict]]:
+) -> list[dict] | None:
     """Read cached lens output.
 
     Returns the list of finding dicts on hit, None on miss / corruption /

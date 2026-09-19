@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import re
 import subprocess
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from ._models import EntryPoint, RepoContext
 

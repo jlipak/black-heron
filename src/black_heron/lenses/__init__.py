@@ -1,7 +1,7 @@
-from .code_quality import run as run_code_quality
-from .governance import run as run_governance
-from .drift import run as run_drift
 from .blind_spot import run as run_blind_spot
+from .code_quality import run as run_code_quality
+from .drift import run as run_drift
+from .governance import run as run_governance
 
 # HETEROGENEOUS REGISTRY — DO NOT iterate this dict and call values uniformly.
 # `code_quality`, `governance`, `drift` accept (ctx, client, tracker?) -> list[Finding].

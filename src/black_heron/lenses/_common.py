@@ -17,7 +17,7 @@ def build_repo_prompt(ctx: RepoContext, *, max_files_listed: int = 200) -> str:
       5. Source samples (4KB-capped small files for coverage)
     """
     parts = [
-        f"# Repository under audit",
+        "# Repository under audit",
         f"Path: {ctx.path}",
         f"Source/text file count: {ctx.file_count}",
         f"Primary language: {ctx.primary_language}",
@@ -33,7 +33,7 @@ def build_repo_prompt(ctx: RepoContext, *, max_files_listed: int = 200) -> str:
         parts.append("")
         parts.append("## Entry-point files (loaded with full content — these are load-bearing for cross-file reasoning)")
         for ep in ctx.entry_points:
-            trunc_note = f"\n[Content truncated at 10KB — file is larger than that]" if ep.truncated else ""
+            trunc_note = "\n[Content truncated at 10KB — file is larger than that]" if ep.truncated else ""
             parts.append(f"\n### {ep.path}  (role: {ep.role}){trunc_note}\n```\n{ep.content}\n```")
 
     parts.append("")

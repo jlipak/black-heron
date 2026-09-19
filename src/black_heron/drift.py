@@ -33,7 +33,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-
 _PUNCT_RE = re.compile(r"[^\w\s]+", re.UNICODE)
 _WS_RE = re.compile(r"\s+", re.UNICODE)
 _CONFIDENCE_DELTA_THRESHOLD = 0.2  # any |Δconf| above this triggers `drifted`

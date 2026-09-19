@@ -13,7 +13,7 @@ from .._models import RepoContext
 from ._base import BaseEnricher, EnrichmentReport
 from .client import McpClientError, McpInitializeError, McpToolError
 from .config import McpServerSpec
-from .firecrawl import _PRIORITY_FILE_RE, _URL_RE, _SKIP_HOST_RE
+from .firecrawl import _PRIORITY_FILE_RE, _SKIP_HOST_RE, _URL_RE
 
 
 class PlaywrightEnricher(BaseEnricher):

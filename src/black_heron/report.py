@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from ._models import RepoContext
@@ -43,7 +43,7 @@ def _write_findings_json(
     payload = {
         "schema_version": "1.0.0",
         "black_heron_version": BLACK_HERON_VERSION,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "repo": {
             "path": ctx.path,
             "file_count": ctx.file_count,
@@ -271,7 +271,7 @@ def _write_report_md(
     lines: list[str] = []
     lines.append("# Black Heron — Audit Report")
     lines.append("")
-    lines.append(f"> Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')} by Black Heron v{BLACK_HERON_VERSION}")
+    lines.append(f"> Generated {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')} by Black Heron v{BLACK_HERON_VERSION}")
     lines.append("")
     lines.append(f"**Repository:** `{ctx.path}`")
     lines.append(f"**Files audited:** {ctx.file_count} (primary language: {ctx.primary_language})")
@@ -363,7 +363,7 @@ def _write_report_md(
                 lines.append(f"- **File:** `{f.get('file', '?')}` lines `{f.get('lines', '?')}`")
                 lines.append(f"- **Confidence:** {f.get('confidence', 0):.2f}")
                 lines.append("")
-                lines.append(f"**Evidence:**")
+                lines.append("**Evidence:**")
                 lines.append("```")
                 lines.append(f.get("evidence", "").strip())
                 lines.append("```")

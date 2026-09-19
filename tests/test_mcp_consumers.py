@@ -8,9 +8,6 @@ from __future__ import annotations
 
 import json
 import textwrap
-from pathlib import Path
-
-import pytest
 
 from black_heron._models import EntryPoint, RepoContext
 from black_heron.mcp_consumers import McpServerSpec, load_mcp_config
@@ -96,7 +93,7 @@ def test_context7_extract_libraries_dedupe_and_cap() -> None:
     assert "click" in libs
     assert "react" in libs
     # dedupe: only one anthropic
-    lc = [l.lower() for l in libs]
+    lc = [name.lower() for name in libs]
     assert lc.count("anthropic") == 1
 
 
