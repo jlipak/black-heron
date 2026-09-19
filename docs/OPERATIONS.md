@@ -1,4 +1,4 @@
-# Operations — Black Heron v1.3.1
+# Operations — Black Heron v1.4.0
 
 How to install, run, and operate Black Heron in real workflows.
 

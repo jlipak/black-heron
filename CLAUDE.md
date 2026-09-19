@@ -49,7 +49,7 @@ All four commands must exit 0 before a change is "done". A live audit (`black-he
 | `src/black_heron/mcp_server.py` | stdio MCP server exposing `audit_repository`, `verify_findings`, `quick_scan` |
 | `src/black_heron/mcp_consumers/` | Optional enrichment through external MCP servers |
 | `src/black_heron/rubric.default.json` | Bundled rubric: floors, caps, lens toggles, ignore patterns |
-| `tests/` | 103 pytest tests, no API calls |
+| `tests/` | 109 pytest tests, no API calls |
 | `docs/` | LAW, PHILOSOPHY, OPERATIONS, KNOWN_LIMITATIONS |
 | `examples/self-audit-<date>/` | Committed showcase: Black Heron audited on itself |
 | `skill/` | Markdown-only Claude Code skill distribution of the same prompts |

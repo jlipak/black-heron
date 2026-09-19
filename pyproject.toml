@@ -1,6 +1,6 @@
 [project]
 name = "black-heron"
-version = "1.3.3"
+version = "1.4.0"
 description = "Repository audit with four Claude lenses, an adversarial verifier and SARIF, JSON and Markdown output."
 readme = "README.md"
 license = "MIT"

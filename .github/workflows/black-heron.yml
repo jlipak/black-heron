@@ -47,9 +47,9 @@ jobs:
           path: ~/.black-heron/cache
           # Key invalidates when the rubric or any lens prompt changes.
           # For most PRs the cache hits and re-audits cost zero API calls.
-          key: bh-cache-${{ runner.os }}-v1.3.3-${{ hashFiles('rubric*.json') }}
+          key: bh-cache-${{ runner.os }}-v1.4.0-${{ hashFiles('rubric*.json') }}
           restore-keys: |
-            bh-cache-${{ runner.os }}-v1.3.3-
+            bh-cache-${{ runner.os }}-v1.4.0-
             bh-cache-${{ runner.os }}-
 
       - name: Install Black Heron

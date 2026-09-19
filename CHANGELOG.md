@@ -2,6 +2,37 @@
 
 All notable changes to Black Heron. SemVer.
 
+## [1.4.0] — 2026-09-19
+
+The "public repo" release. Audit behaviour is unchanged apart from the model defaults; the work is CI, packaging, documentation and cleanup so that a stranger can read, install and trust the repository.
+
+### Added
+- `.github/workflows/ci.yml` — ruff, pytest on Python 3.11 and 3.12, and a CLI smoke on every push and pull request. The consumer audit template keeps its file, renamed "Black Heron audit (consumer template)", and installs from `jlipak/black-heron@master`.
+- `--budget-mode` — promised in the docs since 1.1.0, never parsed by the CLI. Runs the four lenses on `claude-sonnet-5`; the verifier stays on Opus (Law IX). Every lens `run()` takes an optional `model`.
+- `--version`. `black_heron.__version__` reads the package metadata; `report.py` and `mcp_server.py` use it, so the version lives in `pyproject.toml` only.
+- `SECURITY.md`, `.editorconfig`, `.github/CODEOWNERS`, a pull-request template, `.github/dependabot.yml` (pip and GitHub Actions, weekly on Monday 07:00 Europe/Zagreb, minor and patch grouped).
+- `tests/test_models.py` (6 tests): every default model is priced, Law VIII differential, Law IX defaults, budget mode, `--version`. 103 → 109 tests.
+- `docs/README.md` index.
+
+### Changed
+- Model defaults: lenses `claude-opus-4-6` → `claude-opus-4-8`, verifier `claude-opus-4-7` → `claude-opus-5`, budget fallback `claude-sonnet-4-6` → `claude-sonnet-5`; the suggest-mode writer and patch reviewer follow. Ids checked against the current Anthropic model list on 2026-09-19.
+- Price table re-priced at first-party rates: Opus $5 / $25, Sonnet 5 $2 / $10, Haiku 4.5 $1 / $5 per MTok; cache read 0.1x and cache write 1.25x of input. Unknown ids bill at the dearest tier ($10 / $50).
+- Suggest-mode patch reviewer `max_tokens` 512 → 4096: Opus 5 thinks by default and thinking tokens count against the limit.
+- `pyproject.toml`: one-line description, SPDX licence, author, URLs, classifiers, keywords, `ruff` in the dev extras, package-data so the bundled JSON ships in wheels, `setuptools>=77`.
+- README rewritten: what, who, install and a real example on the first screen, then the pipeline, the two distributions, cost and model policy, limits, roadmap.
+- `LAW.md`, `PHILOSOPHY.md`, `OPERATIONS.md` and `KNOWN_LIMITATIONS.md` moved under `docs/`; every reference updated.
+- `CLAUDE.md` rewritten for a public repo: constraints, a free Validation block, codebase map, no personal identity section.
+- Source passes `ruff check` with rules E, F, I, UP (imports sorted, `datetime.UTC`, `X | None`); the rule set is pinned in `pyproject.toml`.
+
+### Removed
+- The two example folders that audited another private repository, and the root `SELF-AUDIT-LATEST.md` (a generated copy). `examples/self-audit-2026-05-21/` stays as the showcase, with the local machine path replaced by a neutral one.
+- Client names, the owner's alias and the old GitHub handle from every file in the tree. URLs point at `github.com/jlipak/black-heron`.
+
+### Not verified in this release
+- No live audit was run with the new model defaults; the unit suite mocks nothing that touches the API and the pipeline code around the calls is unchanged.
+
+---
+
 ## [1.3.3] — 2026-05-22
 
 The "ship-it" release. Phase O ships a copy-paste GitHub Actions workflow template + closes the FM9 gap (cache now also covers the MCP server path, not just the CLI).
