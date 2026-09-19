@@ -5,7 +5,7 @@ description: Run a Black Heron audit on a target repository. Args may include pa
 
 # Run Black Heron Audit
 
-When SHIKA invokes `/audit <path>` or asks "audit X", run this.
+When the owner invokes `/audit <path>` or asks "audit X", run this.
 
 ## Step 1: Resolve target
 
@@ -39,7 +39,7 @@ Default behavior:
 Custom flags worth knowing:
 - `--rubric <path>` — custom rubric
 - `--lenses code_quality,governance` — subset
-- `--budget-mode` — downshift to Sonnet (ONLY if SHIKA explicitly requests cost reduction)
+- `--budget-mode` — downshift to Sonnet (ONLY if the owner explicitly requests cost reduction)
 - `--dry-run` — no API calls; just dump prompt to disk for inspection
 
 ## Step 4: Read the report
@@ -50,7 +50,7 @@ After audit completes:
 3. List severity counts (P0 / P1 / P2).
 4. Note any flagged P0 findings — those are first to address.
 
-## Step 5: Present to SHIKA
+## Step 5: Present to the owner
 
 ```
 ┌─────────────────────────────────────────┐

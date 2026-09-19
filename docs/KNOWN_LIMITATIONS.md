@@ -28,7 +28,7 @@ Honest documentation of what Black Heron does *not* do yet, what known failure m
 
 **Mitigation in v1.0:** Lens system prompts now flag `absence_claim: true` and require checking the file listing first. Verifier applies extra skepticism to `absence_claim` findings. Entry-point files (index.ts, package.json, etc.) are loaded full-content so the lens has cross-file context for entry-point reasoning.
 
-**Residual risk:** A claim about a non-entry-point file being missing may still slip through. Honest target: reduce FP rate from ~13% (v0.1 measured on QURE) to ~5% (v1.0 measured, n=3 verified, 1 rejected on same repo).
+**Residual risk:** A claim about a non-entry-point file being missing may still slip through. Honest target: reduce FP rate from ~13% (v0.1 measured on a client repo) to ~5% (v1.0 measured, n=3 verified, 1 rejected on same repo).
 
 ### FM2 — Lens reasons about inline registration patterns from file listing alone
 
@@ -114,13 +114,13 @@ v1.1 target: enable 1-hour beta cache header by default; document in README.
 
 ## What we measure ourselves on
 
-For each `examples/qure-audit-*/` we ship:
+For each reference audit we ship (the client-repo audits left the tree in 1.4.0; `examples/self-audit-*/` remains):
 - Verified count
 - Rejected count
 - Manual-review FP rate (on findings that survive verifier)
 - Cost + wall time
 
-v0.1 on QURE: 15 verified, 10 rejected, 2 manual FPs → ~13% FP rate after verifier.
-v1.0 on QURE: 2 verified, 1 rejected, 0 manual FPs → 0% FP rate after verifier (n too small to be representative — collect more data points).
+v0.1 on a client compliance repo: 15 verified, 10 rejected, 2 manual FPs → ~13% FP rate after verifier.
+v1.0 on the same repo: 2 verified, 1 rejected, 0 manual FPs → 0% FP rate after verifier (n too small to be representative — collect more data points).
 
 Honest target: across 5 diverse repos averaged, < 10% FP rate post-verifier.

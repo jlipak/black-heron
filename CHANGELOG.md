@@ -232,7 +232,7 @@ The "identity-layer" release. Black Heron becomes a real operational agent, not 
 
 ### Added — Identity layer
 - `CLAUDE.md` (identity + constraints + codebase map + validation commands)
-- `LAW.md` (15 sacred laws, every one evidence-backed from Apollo / QURE / AKIRA collapse)
+- `LAW.md` (15 sacred laws, every one evidence-backed from Apollo / a compliance build / AKIRA collapse)
 - `MEMORY.md` (operational state with NEXT list, 200-line cap)
 - `SESSION-DIGEST.md` (session handoff template)
 - `PHILOSOPHY.md` (canopy-feeding metaphor + design principles, from v1.0)
@@ -308,8 +308,8 @@ The "identity-layer" release. Black Heron becomes a real operational agent, not 
 - `lenses/_common.py` — silent exception swallow in `parse_findings` now logs JSON decode + per-finding validation errors to stderr
 
 ### Identity
-- Project owner identified throughout as SHIKA (Josip Lipak)
-- LICENSE copyright: "Josip Lipak (SHIKA)"
+- Project owner identified throughout as Josip Lipak
+- LICENSE copyright: "Josip Lipak"
 
 ## [1.0.0] — 2026-05-21 (earlier same day)
 
@@ -326,7 +326,7 @@ The "identity-layer" release. Black Heron becomes a real operational agent, not 
 - Volume-calibrated summary at top of REPORT.md
 - `KNOWN_LIMITATIONS.md` — honest self-audit of gaps
 - `PHILOSOPHY.md` — canopy-feeding metaphor
-- `examples/qure-audit-2026-05-21/` (v0.1 reference) and `examples/qure-audit-v1.0/` (v1.0 reference)
+- Two reference audits of a client repository under `examples/` (removed from the tree in 1.4.0; the self-audit remains)
 
 ## [0.1.0] — 2026-05-21 (initial MVP)
 

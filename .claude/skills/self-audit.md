@@ -5,7 +5,7 @@ description: Run Black Heron on its own source. Recursive validation — auditor
 
 # Self-Audit
 
-When SHIKA says `self-audit`, or before any v1.x release tag.
+When the owner says `self-audit`, or before any v1.x release tag.
 
 ## Why
 

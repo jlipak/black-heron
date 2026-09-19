@@ -1,139 +1,74 @@
-# Black Heron — Multi-Lens Governance-First Repository Audit Agent
+# Black Heron — instructions for a coding agent working in this repo
 
-> *"Spread a wide cover, let the issues surface under it, then strike with what survives the verifier."*
+Black Heron is a multi-lens repository audit tool: four LLM lenses, an adversarial verifier, Markdown/JSON/SARIF output. This file is for the agent that edits the code. The public entry point is `README.md`.
 
-## Critical Constraints (Non-Negotiable)
+## Constraints
 
-1. **NEVER fabricate evidence.** Every cited `evidence` field must substring-match the input bundle (samples + entry-points). The `evidence_verifier.py` pre-check enforces this before the LLM verifier sees the finding.
-2. **NEVER push to git remote without explicit SHIKA authorization.** Local commits OK. Push is a separate operation that requires explicit "go push" instruction.
-3. **NEVER use Haiku or Sonnet for substantive reasoning.** Lenses run on `claude-opus-4-6`, verifier on `claude-opus-4-7`. `--budget-mode` is the ONLY way to engage Sonnet, and it must be explicit.
-4. **NEVER touch `severity_confidence_floors` in `rubric.default.json` without bumping `rubric_version`.** Floor changes are policy changes.
-5. **NEVER skip the adversarial verifier.** Even on empty lens output, the verifier runs and confirms emptiness.
-6. **NEVER hardcode secrets.** API keys come from `ANTHROPIC_API_KEY` env var only. `.env.example` is committed, `.env` is gitignored.
-7. **ALWAYS cite cost** at the end of every audit. No hidden API spend.
-8. **ALWAYS preserve rejected findings** in `REPORT.md` and `findings.json`. Transparency demands the reader sees what was filtered.
+1. **Never fabricate evidence.** Every `evidence` field must substring-match the input bundle; `evidence_verifier.py` enforces it before the LLM verifier runs.
+2. **Never push.** Local commits are routine; a push happens only when the owner says so, in his own terminal. `scripts/hooks/block-git-push.sh` blocks it at the tool boundary.
+3. **Never run Haiku or Sonnet for substantive reasoning by default.** Lenses run on `claude-opus-4-8`, the verifier on `claude-opus-5` (Law VIII: different checkpoints, different blind spots). `--budget-mode` is the only way to put the lenses on `claude-sonnet-5`, and the user opts in explicitly.
+4. **Never change `severity_confidence_floors` in `rubric.default.json` without bumping `rubric_version`.** Floor changes are policy changes.
+5. **Never skip the verifier.** Even on empty lens output it runs and confirms emptiness.
+6. **Never hardcode secrets.** The API key comes from `ANTHROPIC_API_KEY` only; `.env` is gitignored, `.env.example` is committed.
+7. **Always report cost** at the end of every audit.
+8. **Always keep rejected findings** in `REPORT.md` and `findings.json`.
 
-For the full set of 15 sacred laws with evidence and rationale, see `docs/LAW.md`.
+The full set of fifteen rules with their evidence base is in `docs/LAW.md`.
 
-## Identity
+## Who
 
-- **SHIKA** — director. NOT a coder. Sets direction, approves push, defines scope.
-- **Black Heron** — the auditor. 99% autonomous within the bounds of `LAW.md` and `rubric.default.json`.
-- **Platform:** Windows 11, Git Bash shell, Python 3.11+.
-- **GitHub:** `lipakjosip442-png` (portfolio account, private repos).
-
-## How We Work
-
-- SHIKA directs. Black Heron executes.
-- "cook" / "do it" / "go" = full autonomy, execute without asking
-- "suggest" / "think" / "plan" = present options, wait for go
-- Never say "want me to?", "should I?" — execute and show results
-- Push back honestly — "that won't work because X" > silent agreement
-- Lead with the action, explain after.
+- **The owner** (Josip Lipak, GitHub `jlipak`) sets direction, approves spend and pushes. He is not a coder: lead with the action, explain after, and push back once with the reason when something is wrong.
+- **The agent** works autonomously inside the bounds of `docs/LAW.md` and `rubric.default.json`. "cook" / "do it" / "go" means execute; "suggest" / "plan" means present options and wait.
+- Platform: Windows 11 with Git Bash, Python 3.11+. Use `python`, not `python3`.
 
 ## Validation
 
-Every audit run must produce three artifacts that pass independent checks:
+Free, non-interactive, no API calls. Run from the repo root; on Linux/macOS replace `.venv/Scripts/` with `.venv/bin/`.
 
 ```bash
-# 1. Smoke audit on bundled fixture (or any clean repo)
-black-heron <repo_path> --out audit/
-
-# 2. Verify outputs exist
-test -f audit/REPORT.md && test -f audit/findings.json && test -f audit/findings.sarif
-
-# 3. SARIF schema validation
-python -c "import json; s = json.load(open('audit/findings.sarif')); assert s['version'] == '2.1.0'"
-
-# 4. Cost report present
-grep -q "Total cost" audit/REPORT.md && grep -q "Wall time" audit/REPORT.md
-
-# 5. Self-audit
-bash scripts/self-audit.sh
+python -m venv .venv                                  # once
+.venv/Scripts/python -m pip install -e ".[dev]"
+.venv/Scripts/python -m ruff check src tests
+.venv/Scripts/python -m pytest -q
+.venv/Scripts/python -m black_heron.cli --version
+.venv/Scripts/python -m black_heron.cli --help
 ```
 
-If any of these five steps fails, the audit is **not done.** No "should work."
+All four commands must exit 0 before a change is "done". A live audit (`black-heron <repo>` or `bash scripts/self-audit.sh`) spends Anthropic credit and runs only on the owner's word.
 
-## Codebase Map
+## Codebase map
 
-| Path | Role | Phase |
-|---|---|---|
-| `CLAUDE.md` | This file. Identity + constraints. | always |
-| `docs/LAW.md` | 15 sacred laws, evidence-backed. | always |
-| `MEMORY.md` | Operational state, NEXT list (200-line cap). | always |
-| `SESSION-DIGEST.md` | Last-session handoff. | always |
-| `README.md` | Public-facing project doc. | always |
-| `docs/KNOWN_LIMITATIONS.md` | Honest self-audit of gaps. | always |
-| `docs/PHILOSOPHY.md` | Canopy-feeding metaphor + design principles. | always |
-| `pyproject.toml` | Python package config, v1.1.0. | always |
-| `rubric.default.json` | Bundled audit rubric (lives inside `src/black_heron/`). | always |
-| `src/black_heron/` | Core package. | Phase A+ |
-| `src/black_heron/lenses/` | 4 lens implementations (Opus 4.6). | Phase A+ |
-| `src/black_heron/synthesis.py` | Adversarial verifier (Opus 4.7). | Phase A+ |
-| `src/black_heron/mcp_server.py` | stdio MCP server (Phase F). | Phase F+ |
-| `.claude/rules/` | Behavioral rules (core, quality, security, python). | Phase B+ |
-| `.claude/skills/` | boot, wrap, audit, research-swarm, self-audit. | Phase D+ |
-| `.claude/agents/` | Sub-agent definitions for lens + verifier execution. | Phase E+ |
-| `.claude/settings.json` | Hook registry (BLOCK-level only). | Phase C+ |
-| `scripts/hooks/` | Hook scripts (block-git-push, scan-secrets, etc.). | Phase C+ |
-| `scripts/self-audit.sh` | Run BH on its own source. | Phase I+ |
-| `examples/` | Real audit outputs (QURE v0.1, v1.0, BH self-audit). | always |
+| Path | Role |
+|---|---|
+| `src/black_heron/cli.py` | Click entry point (`black-heron`), lens orchestration, cache, drift, session record |
+| `src/black_heron/lenses/` | Four lens modules; `blind_spot` runs last and reads the others' findings |
+| `src/black_heron/synthesis.py` | Adversarial verifier (KEEP / REJECT / DOWNGRADE) |
+| `src/black_heron/evidence_verifier.py` | Deterministic substring pre-check before the LLM verifier |
+| `src/black_heron/cost_tracker.py` | Price table and the cost kill-switch |
+| `src/black_heron/cache.py`, `drift.py` | Content-hash cache and baseline drift, both deterministic |
+| `src/black_heron/mcp_server.py` | stdio MCP server exposing `audit_repository`, `verify_findings`, `quick_scan` |
+| `src/black_heron/mcp_consumers/` | Optional enrichment through external MCP servers |
+| `src/black_heron/rubric.default.json` | Bundled rubric: floors, caps, lens toggles, ignore patterns |
+| `tests/` | 103 pytest tests, no API calls |
+| `docs/` | LAW, PHILOSOPHY, OPERATIONS, KNOWN_LIMITATIONS |
+| `examples/self-audit-<date>/` | Committed showcase: Black Heron audited on itself |
+| `skill/` | Markdown-only Claude Code skill distribution of the same prompts |
+| `.claude/` | Rules, skills, agents and hooks for agentic use of this repo |
+| `scripts/` | Hook scripts and installers, `self-audit.sh` |
 
-## Workflow
+`MEMORY.md` and `SESSION-DIGEST.md` are local session state and gitignored.
 
-```
-BOOT → READ MEMORY/DIGEST → PICK NEXT → COOK → COMMIT → DIGEST → SLEEP
-```
+## How to work
 
-One concern per commit. After every meaningful change: commit (local). After every session: update MEMORY.md NEXT + write SESSION-DIGEST.md.
+- One concern per commit, specific paths, no `git add -A`. Commit after every meaningful change.
+- Read before writing. New library API: check the docs, not memory. New model id: check the current Anthropic model list, never guess.
+- A release bumps `version` in `pyproject.toml` (the package reads it at runtime), adds a `CHANGELOG.md` entry and tags `vX.Y.Z` locally. The push and the GitHub release are the owner's.
+- Model ids, prices and `--budget-mode` are documented in `README.md` and `ARCHITECTURE.md`; keep the three in sync when they change.
 
-See `.claude/rules/core.md` for the full lifecycle.
+## Cross-references
 
-## Quick Commands
-
-```bash
-# Audit any repo
-black-heron <repo_path> --out audit/
-
-# Custom rubric
-black-heron <repo_path> --rubric ~/.config/strict.json --out audit/
-
-# Self-audit
-bash scripts/self-audit.sh
-
-# Install as Claude Code skill (after Phase D)
-bash scripts/install-skill.sh
-
-# Install as MCP server (after Phase F)
-bash scripts/install-mcp.sh
-
-# Install hooks (after Phase C)
-bash scripts/install-hooks.sh
-```
-
-## Current State
-
-- **Version:** v1.1.0 (in progress — see PHASE markers in this doc)
-- **Models in play:** Opus 4.6 (lenses), Opus 4.7 (verifier). Sonnet only via explicit `--budget-mode`.
-- **MCP servers BH itself consumes (when invoked from Claude Code):** sequential-thinking, playwright, context7, firecrawl.
-- **Cost per audit at v1.1 baseline:** ~$1.00 (4 lenses Opus 4.6 + verifier Opus 4.7, 5-min ephemeral cache).
-- **Last self-audit:** see `examples/self-audit-2026-05-21/`.
-
-## Why Black Heron
-
-Three patterns converge:
-
-1. **EZEKIEL lineage** — 968 sessions of AKIRA failure distilled into 10 holy rules. We extend that to 15 for our domain.
-2. **Karpathy 4-principle** — Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution. Applied to every lens prompt as discipline.
-3. **Anthropic internal-grade behavioral rules** — Assertiveness, Verification Before Completion, Faithful Outcome Reporting, Comment Discipline, Communication Style. Internalized into prompt design, not copy-pasted.
-
-No source citations in code or public docs name these origins. The vocabulary and discipline are ours. The patterns are convergent — every good audit system grows them independently.
-
-## Cross-References
-
-- `docs/LAW.md` — sacred laws, evidence-backed
-- `MEMORY.md` — current operational state
-- `SESSION-DIGEST.md` — last session handoff
-- `docs/PHILOSOPHY.md` — design rationale
+- `docs/LAW.md` — the fifteen rules with evidence
+- `ARCHITECTURE.md` — module layout, data flow, model strategy
+- `docs/OPERATIONS.md` — install, run, troubleshoot
 - `docs/KNOWN_LIMITATIONS.md` — honest gaps
-- `README.md` — public-facing
+- `.claude/rules/` — core, quality, security and Python rules for agent sessions

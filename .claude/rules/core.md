@@ -53,14 +53,14 @@ Config change > code change. 3 similar lines > premature abstraction. 1 file > 7
 ### Style
 - Lead with the action, explain after.
 - Short messages = command mode. Execute immediately.
-- ALL CAPS from SHIKA = emphasis, not anger.
+- ALL CAPS from the owner = emphasis, not anger.
 - Typos = speed. Read for intent.
 - Never say "want me to?", "should I?". Execute and show results.
 - Never suggest wrapping up or stopping. Keep going until told to stop.
 
 ### Updates during long work
 - Brief one-sentence updates at key moments (finding load-bearing, changing direction, milestone hit).
-- Assume SHIKA has stepped away. Write so he can pick back up cold.
+- Assume the owner has stepped away. Write so he can pick back up cold.
 - End-of-turn summary: 1-2 sentences. What changed, what's next.
 
 ### Presentation
@@ -70,7 +70,7 @@ Config change > code change. 3 similar lines > premature abstraction. 1 file > 7
 - No walls of text — if it takes a paragraph, use a table.
 - Zero red errors in terminal. Suppress safe errors with `2>/dev/null`.
 
-## When SHIKA Says
+## When the owner says
 
 | Word | Meaning |
 |---|---|
@@ -83,7 +83,7 @@ Config change > code change. 3 similar lines > premature abstraction. 1 file > 7
 ## Push Protocol (Law XI)
 
 - Local commits: routine, after every meaningful change.
-- Remote push: requires explicit SHIKA authorization ("push to GitHub").
+- Remote push: requires the owner's explicit authorization ("push to GitHub").
 - BLOCK hook (`scripts/hooks/block-git-push.sh`) prevents accidental push. Override is opt-in.
 
 ## Cross-References

@@ -1,6 +1,6 @@
 """Code-writing (suggest mode) — drafts patches for verified P0/P1 findings.
 
-Suggest-only in v1.2. No auto-apply. SHIKA reviews + applies manually.
+Suggest-only in v1.2. No auto-apply. A human reviews + applies manually.
 
 Pipeline:
   1. Receive verified findings (post-synthesis).

@@ -43,7 +43,7 @@ Even when raw lens output is empty. Verifier confirms emptiness. No exceptions.
 
 ### Apollo benchmark
 - 33-37% FP rate even with multi-agent cross-validation, NO verifier.
-- With adversarial verifier: target < 15%, current measured 0% on QURE v1.0 (small sample n=2).
+- With adversarial verifier: target < 15%, current measured 0% on the v1.0 reference audit (small sample n=2).
 - Calibration tracking in `~/.black-heron/calibration.json` post Phase I.
 
 ### Theoretical vs observable (Law VII)
@@ -62,7 +62,7 @@ Even when raw lens output is empty. Verifier confirms emptiness. No exceptions.
 ```
 - [ ] All new files exist as expected (`ls` verify, not just "I wrote it")
 - [ ] Import-test passes (`py -c "from black_heron.X import Y"`)
-- [ ] Smoke test still passes (run audit on QURE staging, compare to last known-good)
+- [ ] Smoke test still passes (run audit on a known-good reference repo, compare to last known-good)
 - [ ] No new P0 self-audit findings introduced
 - [ ] MEMORY.md updated
 - [ ] Commit staged with specific files only
@@ -74,7 +74,7 @@ Even when raw lens output is empty. Verifier confirms emptiness. No exceptions.
 - [ ] CHANGELOG.md updated
 - [ ] README.md reflects new version
 - [ ] pyproject.toml version bumped
-- [ ] Tag created (locally, push only on SHIKA go)
+- [ ] Tag created (locally, push only on the owner's go)
 ```
 
 ## Test Discipline
@@ -88,7 +88,7 @@ Even when raw lens output is empty. Verifier confirms emptiness. No exceptions.
 - `tests/test_rubric.py` — load + validate
 
 ### What tests we have NOW (v1.1 in progress)
-- Smoke tests via real audits on QURE staging (manual)
+- Smoke tests via real audits on a reference repo (manual)
 - Self-audit (post Phase I)
 
 ### Honest gap

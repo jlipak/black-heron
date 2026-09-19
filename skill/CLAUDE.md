@@ -74,5 +74,5 @@ The lens prompts are tuned against Python and TypeScript codebases. For other la
 
 ---
 
-*Black Heron is MIT-licensed. Source: https://github.com/lipakjosip442-png/black-heron (`/skill/` subdir).*
+*Black Heron is MIT-licensed. Source: https://github.com/jlipak/black-heron (`/skill/` subdir).*
 *This CLAUDE.md template is part of that distribution.*

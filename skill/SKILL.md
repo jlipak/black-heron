@@ -158,5 +158,5 @@ Then point them to REPORT.md. Do not summarize findings inline in chat — the r
 
 ---
 
-*Author: SHIKA (Josip Lipak) · 2026. MIT license.*
-*This skill is the lightweight Karpathy-style distribution of Black Heron. For the full Python implementation with deterministic SARIF generation, content-hash cache, and CI/CD integration, see `lipakjosip442-png/black-heron`.*
+*Author: Josip Lipak · 2026. MIT license.*
+*This skill is the lightweight Karpathy-style distribution of Black Heron. For the full Python implementation with deterministic SARIF generation, content-hash cache, and CI/CD integration, see `jlipak/black-heron`.*

@@ -1,11 +1,11 @@
 ---
 name: wrap
-description: Session-end ritual. Commit uncommitted work, update MEMORY.md NEXT list, write fresh SESSION-DIGEST.md, spot-check 3 doc claims against reality. Run when SHIKA says "wrap" or session needs to close cleanly.
+description: Session-end ritual. Commit uncommitted work, update MEMORY.md NEXT list, write fresh SESSION-DIGEST.md, spot-check 3 doc claims against reality. Run when the owner says "wrap" or session needs to close cleanly.
 ---
 
 # Black Heron Wrap-Up
 
-When SHIKA says `wrap`, run this sequence. Goal: leave the next session a clean handoff.
+When the owner says `wrap`, run this sequence. Goal: leave the next session a clean handoff.
 
 ## Step 1: Survey state
 

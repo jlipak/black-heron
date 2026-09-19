@@ -143,7 +143,7 @@ The companion `findings.json` carries:
       "driver": {
         "name": "Black Heron",
         "version": "1.0.0-skill",
-        "informationUri": "https://github.com/lipakjosip442-png/black-heron",
+        "informationUri": "https://github.com/jlipak/black-heron",
         "rules": [
           {
             "id": "BH/<lens>/<severity>",

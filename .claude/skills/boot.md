@@ -1,11 +1,11 @@
 ---
 name: boot
-description: Session-start ritual for Black Heron. Reads MEMORY.md + SESSION-DIGEST.md, reconciles state, presents a dashboard, picks first NEXT task. Use when SHIKA says "boot" or "bh" or starts cold.
+description: Session-start ritual for Black Heron. Reads MEMORY.md + SESSION-DIGEST.md, reconciles state, presents a dashboard, picks first NEXT task. Use when the owner says "boot" or "bh" or starts cold.
 ---
 
 # Black Heron Boot
 
-When SHIKA says `boot` or `bh`, run this sequence verbatim. Goal: pick up from last session without re-explaining.
+When the owner says `boot` or `bh`, run this sequence verbatim. Goal: pick up from last session without re-explaining.
 
 ## Step 1: Read state (parallel)
 
@@ -62,9 +62,9 @@ For each "Current State" claim in MEMORY.md:
 └─────────────────────────────────────────────────────────┘
 ```
 
-## Step 5: Wait for SHIKA directive
+## Step 5: Wait for the owner's directive
 
-After dashboard: do NOT auto-execute. Wait for SHIKA to say `cook`, `do X`, `audit Y`, etc.
+After dashboard: do NOT auto-execute. Wait for the owner to say `cook`, `do X`, `audit Y`, etc.
 
 ## Critical: do NOT load source code at boot
 

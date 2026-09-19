@@ -1,6 +1,6 @@
 # The Law of Black Heron
 
-Fifteen sacred rules. Each is the **inverse of a proven failure mode** — drawn from the Apollo Lex audit (37% false-positive rate without verifier), the QURE compliance build, and the 968-session AKIRA collapse that EZEKIEL was forged from. None of these are aspirational. Every one is paid for in past pain.
+Fifteen sacred rules. Each is the **inverse of a proven failure mode** — drawn from the Apollo Lex audit (37% false-positive rate without verifier), a compliance-pipeline build, and the 968-session AKIRA collapse that EZEKIEL was forged from. None of these are aspirational. Every one is paid for in past pain.
 
 ```
 Trust = (Verified Findings × Speed) / (False Positives × Scope Creep)
@@ -39,7 +39,7 @@ For BH: every audit ships with three artifacts (`REPORT.md`, `findings.json`, `f
 ---
 
 ## V. NEVER CLAIM ABSENCE WITHOUT CHECKING AUTHORITATIVE SOURCES
-**Evidence base:** BH v0.1 on QURE: lens raised "LICENSE missing" + "smoke-mcp tools missing." Both files existed — lens didn't see them in the 30-file sample. v1.0 mitigates via `absence_claim: true` flag + entry-point full-content loading.
+**Evidence base:** BH v0.1 on a client compliance repo: lens raised "LICENSE missing" + "smoke-mcp tools missing." Both files existed — lens didn't see them in the 30-file sample. v1.0 mitigates via `absence_claim: true` flag + entry-point full-content loading.
 
 If a finding asserts a file or feature is missing, the lens MUST set `absence_claim: true` AND state in `why_it_matters` which authoritative section was checked (file listing? entry-point content?). Verifier applies extra skepticism to absence claims.
 
@@ -67,7 +67,7 @@ Lenses run on `claude-opus-4-6`. Verifier runs on `claude-opus-4-7`. Different m
 ---
 
 ## IX. NEVER USE HAIKU OR SONNET FOR SUBSTANTIVE REASONING
-**Evidence base:** SHIKA preference + AKIRA collapse documenting that cost-cutting on substance produces silent decay. Sonnet for lens work means cheaper audits AND lower-quality findings. The savings is illusory.
+**Evidence base:** Owner preference + AKIRA collapse documenting that cost-cutting on substance produces silent decay. Sonnet for lens work means cheaper audits AND lower-quality findings. The savings is illusory.
 
 `claude-opus-4-6` for lenses, `claude-opus-4-7` for verifier. `--budget-mode` flag is the **only** way to engage Sonnet, and the user opts in explicitly. Haiku is not configured anywhere in `rubric.default.json`.
 
@@ -85,10 +85,10 @@ All three are configurable in `rubric.default.json`. None are silently bypassed.
 
 ---
 
-## XI. NEVER PUSH TO GIT REMOTE WITHOUT EXPLICIT SHIKA AUTHORIZATION
+## XI. NEVER PUSH TO GIT REMOTE WITHOUT THE OWNER'S EXPLICIT AUTHORIZATION
 **Evidence base:** EZEKIEL Constraints + universal rule. Local commits survive every catastrophe; remote pushes survive every operator regret.
 
-`scripts/hooks/block-git-push.sh` is a PreToolUse BLOCK hook (exit 2). Unblocked only by SHIKA editing `.claude/settings.local.json` with explicit override, OR by SHIKA invoking the push command in a separate dedicated session.
+`scripts/hooks/block-git-push.sh` is a PreToolUse BLOCK hook (exit 2). Unblocked only by the owner editing `.claude/settings.local.json` with explicit override, OR by the owner invoking the push command in a separate dedicated session.
 
 ---
 
@@ -142,4 +142,4 @@ Removing a law requires: same evidence threshold, but for a documented case wher
 
 *"Make findings that survive scrutiny. Protect the reviewer's trust above all else."*
 
-Built on EZEKIEL's 10 holy rules, extended with QURE governance, hardened by Apollo verifier lessons. Author: SHIKA. 2026.
+Built on EZEKIEL's 10 holy rules, extended with compliance-pipeline governance, hardened by Apollo verifier lessons. Author: Josip Lipak. 2026.

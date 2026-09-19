@@ -4,7 +4,7 @@
 > Four lenses + adversarial verifier. No Python install, no API key juggling.
 > Just copy into `.claude/skills/` and ask Claude Code to audit.
 >
-> **This is the `/skill/` subdirectory of the [`black-heron`](https://github.com/lipakjosip442-png/black-heron) monorepo.** For the Python CLI edition (deterministic, CI-ready), see the repo root.
+> **This is the `/skill/` subdirectory of the [`black-heron`](https://github.com/jlipak/black-heron) monorepo.** For the Python CLI edition (deterministic, CI-ready), see the repo root.
 
 ```
        ___
@@ -18,7 +18,7 @@
 
 ## What this is
 
-This is the **lightweight distribution** of [Black Heron](https://github.com/lipakjosip442-png/black-heron). Karpathy-pattern claude.md style: instructions live in markdown, Claude Code reads them and executes the pipeline. No Python package to install, no CI runner needed.
+This is the **lightweight distribution** of [Black Heron](https://github.com/jlipak/black-heron). Karpathy-pattern claude.md style: instructions live in markdown, Claude Code reads them and executes the pipeline. No Python package to install, no CI runner needed.
 
 **Trade-offs vs the Python edition** — read [`Trade-offs vs Python Black Heron`](#trade-offs-vs-python-black-heron) at the bottom of this README.
 
@@ -30,7 +30,7 @@ From the root of any repo you want to be able to audit:
 
 ```bash
 # Clone the monorepo to a tmp dir, copy just /skill/ to .claude/skills/bh
-git clone --depth=1 https://github.com/lipakjosip442-png/black-heron /tmp/bh-monorepo
+git clone --depth=1 https://github.com/jlipak/black-heron /tmp/bh-monorepo
 mkdir -p .claude/skills && cp -r /tmp/bh-monorepo/skill .claude/skills/bh
 rm -rf /tmp/bh-monorepo
 ```
@@ -38,7 +38,7 @@ rm -rf /tmp/bh-monorepo
 Or with sparse-checkout if you prefer a single shallow tree:
 
 ```bash
-git clone --depth=1 --filter=blob:none --sparse https://github.com/lipakjosip442-png/black-heron /tmp/bh
+git clone --depth=1 --filter=blob:none --sparse https://github.com/jlipak/black-heron /tmp/bh
 cd /tmp/bh && git sparse-checkout set skill
 cp -r /tmp/bh/skill /path/to/your/repo/.claude/skills/bh
 ```
@@ -71,7 +71,7 @@ Or open both files and **merge by hand** — pull just the sections you want (ty
 If you want `/bh` available from any project without per-project clones:
 
 ```bash
-git clone --depth=1 https://github.com/lipakjosip442-png/black-heron /tmp/bh-monorepo
+git clone --depth=1 https://github.com/jlipak/black-heron /tmp/bh-monorepo
 cp -r /tmp/bh-monorepo/skill ~/.claude/skills/bh
 rm -rf /tmp/bh-monorepo
 ```
@@ -189,7 +189,7 @@ Both ship the same lens prompts, the same LAW.md, the same governance discipline
 
 ## Honest scope
 
-This is v1.0.0 of the skill distribution. The lens prompts were tuned against a small set of Python/TypeScript repos — they're solid for those stacks but **may have blind spots for Rust, Go, Java, C++**. If you run the audit on a stack we haven't tuned for and find a systematic gap, [open an issue](https://github.com/lipakjosip442-png/black-heron/issues) and we'll look at it.
+This is v1.0.0 of the skill distribution. The lens prompts were tuned against a small set of Python/TypeScript repos — they're solid for those stacks but **may have blind spots for Rust, Go, Java, C++**. If you run the audit on a stack we haven't tuned for and find a systematic gap, [open an issue](https://github.com/jlipak/black-heron/issues) and we'll look at it.
 
 The discipline (LAW.md, evidence-presence check, adversarial verifier on different model, severity floors) is universal. It works regardless of stack. What varies is whether the **lens prompts** know what to look for in your particular language ecosystem.
 
@@ -199,5 +199,5 @@ MIT. See [`LICENSE`](LICENSE). Use it, fork it, ship it.
 
 ---
 
-*Author: SHIKA (Josip Lipak) · 2026.*
-*This is the Karpathy-style distribution. For the Python implementation with deterministic SARIF generation, content-hash cache, and CI-ready CLI, see the [repo root](https://github.com/lipakjosip442-png/black-heron).*
+*Author: Josip Lipak · 2026.*
+*This is the Karpathy-style distribution. For the Python implementation with deterministic SARIF generation, content-hash cache, and CI-ready CLI, see the [repo root](https://github.com/jlipak/black-heron).*

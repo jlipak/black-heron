@@ -107,7 +107,7 @@ def _write_findings_sarif(path: Path, ctx: RepoContext, v: VerifierResult) -> No
                 "driver": {
                     "name": "Black Heron",
                     "version": BLACK_HERON_VERSION,
-                    "informationUri": "https://github.com/lipakjosip442-png/black-heron",
+                    "informationUri": "https://github.com/jlipak/black-heron",
                     "rules": list(rules_seen.values()),
                 }
             },
@@ -376,7 +376,7 @@ def _write_report_md(
         approved = [p for p in patches if p.get("verifier_approved")]
         lines.append(f"## Suggested patches ({len(approved)}/{len(patches)} verifier-approved)")
         lines.append("")
-        lines.append("These patches are SUGGESTIONS only — SHIKA reviews + applies manually. Never auto-applied.")
+        lines.append("These patches are SUGGESTIONS only — a human reviews + applies manually. Never auto-applied.")
         lines.append("")
         for i, p in enumerate(patches, 1):
             badge = "✓ verifier-approved" if p.get("verifier_approved") else "⚠ unverified"

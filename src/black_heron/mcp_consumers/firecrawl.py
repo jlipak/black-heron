@@ -17,7 +17,7 @@ from .config import McpServerSpec
 
 _URL_RE = re.compile(r"https?://[^\s)>\"'\]]+", re.IGNORECASE)
 _PRIORITY_FILE_RE = re.compile(r"(?:^|/)(README|CHANGELOG|CONTRIBUTING|ARCHITECTURE|OPERATIONS|PHILOSOPHY)\.md$", re.IGNORECASE)
-_SKIP_HOST_RE = re.compile(r"^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|github\.com/lipakjosip442-png/)", re.IGNORECASE)
+_SKIP_HOST_RE = re.compile(r"^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|github\.com/jlipak/)", re.IGNORECASE)
 
 
 class FirecrawlEnricher(BaseEnricher):

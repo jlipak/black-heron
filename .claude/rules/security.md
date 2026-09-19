@@ -16,10 +16,10 @@
 ## Push Protocol (Law XI)
 
 - Local commits are routine.
-- Remote push requires **explicit SHIKA authorization** — usually "push to GitHub" or equivalent.
+- Remote push requires **the owner's explicit authorization** — usually "push to GitHub" or equivalent.
 - `scripts/hooks/block-git-push.sh` is a PreToolUse hook on Bash. Pattern `git\s+push` → exit 2 (HARD BLOCK).
-- Override path 1: SHIKA edits `.claude/settings.local.json` to disable the hook for one session.
-- Override path 2: SHIKA invokes the push command in a fresh dedicated session where the hook isn't loaded.
+- Override path 1: the owner edits `.claude/settings.local.json` to disable the hook for one session.
+- Override path 2: the owner invokes the push command in a fresh dedicated session where the hook isn't loaded.
 - Either way, the push is explicit, intentional, and documented.
 
 ## API Key Handling
@@ -32,16 +32,16 @@
   ```
 - If a code path detects the API key starts with the placeholder prefix `sk-ant-...` literal, treat as misconfiguration and exit 1.
 
-## Repo Scrub Discipline (from QURE clean-staging lesson)
+## Repo Scrub Discipline (from an earlier client-repo scrub)
 
 Before any portfolio/public-facing repo push:
 1. Run grep for person names, salary mentions, interview process language.
-2. Run grep for proper-noun handles (lipakjosip, jesusamongai, etc.).
+2. Run grep for the owner's handles and old usernames.
 3. Verify no `.env` file exists in tracked files (`git ls-files | grep '.env$'`).
 4. Verify no `.git.backup-*` artifacts committed.
 5. Audit log evidence in commit messages (no "war room", "interview", "Round N" leakage).
 
-For Black Heron specifically: SHIKA is the only proper noun that appears in this codebase. No exceptions.
+For Black Heron specifically: the only person named in this codebase is the owner, in LICENSE and the author lines. No client names, no aliases, no local paths.
 
 ## Hook Enforcement
 

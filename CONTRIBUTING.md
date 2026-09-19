@@ -7,7 +7,7 @@ Slim guide. Mostly: read `docs/LAW.md`, follow the 15 sacred laws.
 1. Run `bash scripts/self-audit.sh` — confirm 0 P0 findings remain.
 2. Bump `pyproject.toml` version if your change is user-visible.
 3. Update `CHANGELOG.md` with your change under the appropriate heading.
-4. If you changed any lens system prompt: re-run smoke audit on the QURE clean staging example and confirm FP rate hasn't regressed.
+4. If you changed any lens system prompt: re-run the self-audit (`bash scripts/self-audit.sh`) and confirm the FP rate hasn't regressed.
 
 ## What changes are easy to land
 

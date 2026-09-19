@@ -22,7 +22,7 @@ The "never rewrite — always patch" rule (`LAW.md` law III) is the post-mortem 
 ## Companion project
 
 ### Python Black Heron — full implementation
-[lipakjosip442-png/black-heron](https://github.com/lipakjosip442-png/black-heron) is the Python package edition. It implements the same lens prompts, same LAW.md, same adversarial verifier — but with deterministic SARIF generation, content-hash cache (`--no-cache` to bypass), baseline drift mode (`--baseline previous.json`), MCP server exposure, and a 103-test pytest suite. Suitable for production CI/CD where you need stable, machine-comparable outputs.
+[jlipak/black-heron](https://github.com/jlipak/black-heron) is the Python package edition. It implements the same lens prompts, same LAW.md, same adversarial verifier — but with deterministic SARIF generation, content-hash cache (`--no-cache` to bypass), baseline drift mode (`--baseline previous.json`), MCP server exposure, and a 103-test pytest suite. Suitable for production CI/CD where you need stable, machine-comparable outputs.
 
 This skill is **the lightweight distribution** — same brain, different distribution model.
 
@@ -32,4 +32,4 @@ This distribution is MIT-licensed. See [`LICENSE`](LICENSE).
 
 ---
 
-*Author: Josip Lipak (SHIKA) · 2026.*
+*Author: Josip Lipak · 2026.*

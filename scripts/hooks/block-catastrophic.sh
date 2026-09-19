@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PreToolUse(Bash). HARD BLOCK on catastrophic shell operations.
-# Mirrors QURE's block-catastrophic pattern. Exit 2 to deny.
+# Mirrors the block-catastrophic hook pattern from an earlier project. Exit 2 to deny.
 
 set -u
 
@@ -25,7 +25,7 @@ deny() {
   echo "BLOCKED by Black Heron — catastrophic command rejected." >&2
   echo "Reason: $why" >&2
   echo "Command: $CMD" >&2
-  echo "If genuinely required, SHIKA runs it himself in a fresh session." >&2
+  echo "If genuinely required, the owner runs it by hand in a fresh session." >&2
   exit 2
 }
 
